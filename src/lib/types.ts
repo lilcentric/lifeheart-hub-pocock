@@ -1,3 +1,17 @@
+export type EmploymentType = "permanent" | "casual";
+
+export interface ContractTemplate {
+  id: string;
+  name: string;
+  employment_type: EmploymentType;
+  version: string;
+  template_id: string;
+  archived: boolean;
+  created_at: string;
+}
+
+export type NewContractTemplate = Omit<ContractTemplate, "id" | "archived" | "created_at">;
+
 export type OnboardingStatus =
   | "completed"
   | "not_completed"
