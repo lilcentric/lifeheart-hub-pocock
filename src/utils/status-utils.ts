@@ -26,6 +26,10 @@ const STATUS_META: Record<OnboardingStatus, StatusMeta> = {
     label: "In Progress",
     className: "bg-amber-100 text-amber-800",
   },
+  pending_verification: {
+    label: "Pending Verification",
+    className: "bg-amber-100 text-amber-800",
+  },
   na: {
     label: "N/A",
     className: "bg-gray-100 text-gray-600",
@@ -54,14 +58,12 @@ export const GENERAL_STATUSES: OnboardingStatus[] = [
   "na",
 ];
 
-// Document fields per CONTEXT.md
+// Document fields per CONTEXT.md (supports not_received / not_signed)
 export const DOCUMENT_FIELDS: (keyof OnboardingRecord)[] = [
   "position_description_status",
   "employment_contract_status",
   "code_of_conduct_status",
   "employee_details_form_status",
-  "id_verification_status",
-  "relevant_insurance_status",
   "conflict_of_interest_status",
 ];
 
@@ -79,12 +81,16 @@ type StatusField = keyof Pick<
   | "employment_contract_status"
   | "code_of_conduct_status"
   | "employee_details_form_status"
-  | "id_verification_status"
-  | "relevant_insurance_status"
   | "conflict_of_interest_status"
-  | "screening_checks_status"
   | "training_status"
   | "orientation_induction_status"
+  | "identity_right_to_work_status"
+  | "wwcc_status"
+  | "ndiswsc_status"
+  | "ndis_orientation_status"
+  | "qualifications_status"
+  | "first_aid_cpr_status"
+  | "car_insurance_status"
   | "training_needs_status"
   | "uniforms_status"
 >;
@@ -98,12 +104,16 @@ const ALL_STATUS_FIELDS: StatusField[] = [
   "employment_contract_status",
   "code_of_conduct_status",
   "employee_details_form_status",
-  "id_verification_status",
-  "relevant_insurance_status",
   "conflict_of_interest_status",
-  "screening_checks_status",
   "training_status",
   "orientation_induction_status",
+  "identity_right_to_work_status",
+  "wwcc_status",
+  "ndiswsc_status",
+  "ndis_orientation_status",
+  "qualifications_status",
+  "first_aid_cpr_status",
+  "car_insurance_status",
   "training_needs_status",
   "uniforms_status",
 ];
