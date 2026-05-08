@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import OnboardingForm from "@/components/onboarding/OnboardingForm";
+import ArchiveButton from "@/components/onboarding/ArchiveButton";
 import type { OnboardingRecord, Profile } from "@/lib/types";
 
 interface Props {
@@ -49,14 +50,29 @@ export default async function EditOnboardingPage({ params }: Props) {
     .order("full_name");
   const officers = (rawOfficers ?? []) as Pick<Profile, "id" | "full_name">[];
 
+  const isAdmin = profile?.role === "admin";
+
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">
-          Edit Record{" "}
-          <span className="font-mono text-base text-gray-500">{id}</span>
-        </h1>
-        <p className="text-sm text-gray-500 mt-0.5">{record.staff_name}</p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">
+            Edit Record{" "}
+            <span className="font-mono text-base text-gray-500">{id}</span>
+          </h1>
+          <p className="text-sm text-gray-500 mt-0.5">{record.staff_name}</p>
+          {record.archived_at && (
+            <p className="text-xs text-amber-600 mt-1">
+              Archived {new Date(record.archived_at).toLocaleDateString("en-AU")}
+            </p>
+          )}
+        </div>
+        {isAdmin && (
+          <ArchiveButton
+            recordId={record.id}
+            isArchived={record.archived_at !== null}
+          />
+        )}
       </div>
       <OnboardingForm
         record={record}
