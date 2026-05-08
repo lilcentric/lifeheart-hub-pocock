@@ -4,7 +4,14 @@ import OnboardingTable from "@/components/onboarding/OnboardingTable";
 import Link from "next/link";
 import type { OnboardingRecord, Profile } from "@/lib/types";
 
-export default async function OnboardingPage() {
+interface Props {
+  searchParams: Promise<{ showArchived?: string }>;
+}
+
+export default async function OnboardingPage({ searchParams }: Props) {
+  const { showArchived } = await searchParams;
+  const showingArchived = showArchived === "1";
+
   const supabase = await createClient();
 
   const {
@@ -19,10 +26,18 @@ export default async function OnboardingPage() {
     .single();
   const profile = rawProfile as Pick<Profile, "role"> | null;
 
-  const { data: rawRecords, error } = await supabase
+  let query = supabase
     .from("onboarding_records")
     .select("*, officer_profile:profiles!onboarding_officer(id, full_name)")
     .order("created_at", { ascending: false });
+
+  if (showingArchived) {
+    query = query.not("archived_at", "is", null);
+  } else {
+    query = query.is("archived_at", null);
+  }
+
+  const { data: rawRecords, error } = await query;
 
   if (error) {
     console.error("Failed to fetch onboarding records:", error);
@@ -35,6 +50,7 @@ export default async function OnboardingPage() {
 
   const canWrite =
     profile?.role === "admin" || profile?.role === "officer";
+  const isAdmin = profile?.role === "admin";
 
   return (
     <div className="p-6">
@@ -44,22 +60,32 @@ export default async function OnboardingPage() {
             Staff Onboarding
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {records?.length ?? 0} records
+            {records?.length ?? 0} {showingArchived ? "archived" : "active"} records
           </p>
         </div>
-        {canWrite && (
-          <Link
-            href="/onboarding/new"
-            className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 transition-colors"
-          >
-            New record
-          </Link>
-        )}
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <Link
+              href={showingArchived ? "/onboarding" : "/onboarding?showArchived=1"}
+              className="px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              {showingArchived ? "Show active" : "Show archived"}
+            </Link>
+          )}
+          {canWrite && !showingArchived && (
+            <Link
+              href="/onboarding/new"
+              className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 transition-colors"
+            >
+              New record
+            </Link>
+          )}
+        </div>
       </div>
 
       <OnboardingTable
         records={records}
-        canWrite={canWrite}
+        canWrite={canWrite && !showingArchived}
         currentUserId={user.id}
         currentUserRole={profile?.role ?? "viewer"}
       />

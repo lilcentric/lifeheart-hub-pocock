@@ -14,7 +14,8 @@ export default async function DashboardPage() {
 
   const { data: rawRecords } = await supabase
     .from("onboarding_records")
-    .select("*");
+    .select("*")
+    .is("archived_at", null);
 
   const all = (rawRecords ?? []) as OnboardingRecord[];
 
