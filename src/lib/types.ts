@@ -38,6 +38,10 @@ export interface OnboardingRecord {
   employee_details_form_status: OnboardingStatus;
   conflict_of_interest_status: OnboardingStatus;
 
+  // Compliance
+  screening_checks_status: OnboardingStatus;
+  ndiswsc_status: OnboardingStatus;
+
   // Training & Induction
   training_status: OnboardingStatus;
   orientation_induction_status: OnboardingStatus;

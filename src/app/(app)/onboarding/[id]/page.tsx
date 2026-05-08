@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import OnboardingForm from "@/components/onboarding/OnboardingForm";
+import NdisWscPanel from "@/components/onboarding/NdisWscPanel";
+import OnboardingLinkPanel from "@/components/onboarding/OnboardingLinkPanel";
 import type { OnboardingRecord, Profile } from "@/lib/types";
 
 interface Props {
@@ -49,6 +51,20 @@ export default async function EditOnboardingPage({ params }: Props) {
     .order("full_name");
   const officers = (rawOfficers ?? []) as Pick<Profile, "id" | "full_name">[];
 
+  const isAdmin = profile?.role === "admin";
+  const isOfficer = profile?.role === "officer";
+
+  // Fetch the latest active (non-revoked) token for this record
+  const { data: rawToken } = await supabase
+    .from("onboarding_tokens")
+    .select("id")
+    .eq("record_id", id)
+    .is("revoked_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const activeToken = rawToken as { id: string } | null;
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -58,11 +74,27 @@ export default async function EditOnboardingPage({ params }: Props) {
         </h1>
         <p className="text-sm text-gray-500 mt-0.5">{record.staff_name}</p>
       </div>
-      <OnboardingForm
-        record={record}
-        officers={officers}
-        currentUserRole={profile?.role ?? "viewer"}
-      />
+
+      <div className="space-y-6 max-w-3xl">
+        <OnboardingLinkPanel
+          recordId={id}
+          isAdmin={isAdmin}
+          isOfficer={isOfficer}
+          activeToken={activeToken}
+        />
+
+        <NdisWscPanel
+          recordId={id}
+          initialStatus={record.ndiswsc_status}
+          isAdmin={isAdmin}
+        />
+
+        <OnboardingForm
+          record={record}
+          officers={officers}
+          currentUserRole={profile?.role ?? "viewer"}
+        />
+      </div>
     </div>
   );
 }
