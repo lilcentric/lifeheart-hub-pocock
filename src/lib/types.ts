@@ -87,6 +87,13 @@ export interface OnboardingRecord {
   updated_at: string;
 }
 
+export interface OnboardingToken {
+  token: string;
+  record_id: string;
+  revoked_at: string | null;
+  created_at: string;
+}
+
 export type OnboardingRecordWithOfficer = OnboardingRecord & {
   officer_profile: Pick<Profile, "id" | "full_name"> | null;
 };
@@ -149,6 +156,14 @@ export interface Database {
         Update: Partial<
           Omit<OnboardingRecord, "id" | "created_at" | "updated_at">
         >;
+        Relationships: [];
+      };
+      onboarding_tokens: {
+        Row: OnboardingToken;
+        Insert: Omit<OnboardingToken, "token" | "created_at"> & {
+          token?: string;
+        };
+        Update: Partial<Omit<OnboardingToken, "token" | "created_at">>;
         Relationships: [];
       };
     };
