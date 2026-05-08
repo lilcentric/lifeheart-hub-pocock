@@ -54,8 +54,16 @@ export interface OnboardingRecord {
   // Admin legacy
   uniforms_status: OnboardingStatus;
 
+  archived: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface OnboardingToken {
+  token: string;
+  record_id: string;
+  revoked_at: string | null;
+  created_at: string;
 }
 
 export type OnboardingRecordWithOfficer = OnboardingRecord & {
@@ -80,6 +88,14 @@ export interface Database {
         Update: Partial<
           Omit<OnboardingRecord, "id" | "created_at" | "updated_at">
         >;
+        Relationships: [];
+      };
+      onboarding_tokens: {
+        Row: OnboardingToken;
+        Insert: Omit<OnboardingToken, "token" | "created_at"> & {
+          token?: string;
+        };
+        Update: Partial<Omit<OnboardingToken, "token" | "created_at">>;
         Relationships: [];
       };
     };
