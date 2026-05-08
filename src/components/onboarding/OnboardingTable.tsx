@@ -56,15 +56,19 @@ const COLUMN_GROUPS: ColumnGroup[] = [
       { key: "employment_contract_status", label: "Contract" },
       { key: "code_of_conduct_status", label: "Code of Conduct" },
       { key: "employee_details_form_status", label: "Employee Details" },
-      { key: "id_verification_status", label: "ID Verification" },
-      { key: "relevant_insurance_status", label: "Insurance" },
       { key: "conflict_of_interest_status", label: "Conflict of Interest" },
     ],
   },
   {
-    label: "Compliance",
+    label: "Compliance & Identity",
     columns: [
-      { key: "screening_checks_status", label: "Screening Checks" },
+      { key: "identity_right_to_work_status", label: "ID / Right to Work" },
+      { key: "wwcc_status", label: "WWCC" },
+      { key: "ndiswsc_status", label: "NDISWSC" },
+      { key: "ndis_orientation_status", label: "NDIS Orientation" },
+      { key: "qualifications_status", label: "Qualifications" },
+      { key: "first_aid_cpr_status", label: "First Aid & CPR" },
+      { key: "car_insurance_status", label: "Car Insurance" },
     ],
   },
   {
