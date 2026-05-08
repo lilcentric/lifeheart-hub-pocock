@@ -20,6 +20,7 @@ const statusEnum = z.enum([
   "not_received",
   "not_signed",
   "in_progress",
+  "pending_verification",
   "na",
 ]);
 
@@ -128,6 +129,7 @@ const STATUS_LABELS: Record<OnboardingStatus, string> = {
   not_received: "Not Received",
   not_signed: "Not Signed",
   in_progress: "In Progress",
+  pending_verification: "Pending Verification",
   na: "N/A",
 };
 
