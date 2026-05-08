@@ -32,11 +32,11 @@ export default async function DashboardPage() {
     return new Date(r.updated_at) >= startOfMonth;
   }).length;
 
-  // Pending screening checks (NDIS compliance priority)
+  // Pending NDIS screening (compliance priority)
   const pendingScreening = all.filter(
     (r) =>
-      r.screening_checks_status !== "completed" &&
-      r.screening_checks_status !== "na"
+      r.ndiswsc_status !== "completed" &&
+      r.ndiswsc_status !== "na"
   ).length;
 
   // Average days to complete onboarding (completed records only)

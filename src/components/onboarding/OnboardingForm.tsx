@@ -20,6 +20,7 @@ const statusEnum = z.enum([
   "not_received",
   "not_signed",
   "in_progress",
+  "pending_verification",
   "na",
 ]);
 
@@ -38,13 +39,19 @@ const schema = z.object({
   employment_contract_status: statusEnum,
   code_of_conduct_status: statusEnum,
   employee_details_form_status: statusEnum,
-  id_verification_status: statusEnum,
-  relevant_insurance_status: statusEnum,
   conflict_of_interest_status: statusEnum,
 
-  screening_checks_status: statusEnum,
   training_status: statusEnum,
   orientation_induction_status: statusEnum,
+
+  identity_right_to_work_status: statusEnum,
+  wwcc_status: statusEnum,
+  ndiswsc_status: statusEnum,
+  ndis_orientation_status: statusEnum,
+  qualifications_status: statusEnum,
+  first_aid_cpr_status: statusEnum,
+  car_insurance_status: statusEnum,
+
   training_needs_status: statusEnum,
   uniforms_status: statusEnum,
 });
@@ -61,12 +68,16 @@ type StatusFieldKey = keyof Pick<
   | "employment_contract_status"
   | "code_of_conduct_status"
   | "employee_details_form_status"
-  | "id_verification_status"
-  | "relevant_insurance_status"
   | "conflict_of_interest_status"
-  | "screening_checks_status"
   | "training_status"
   | "orientation_induction_status"
+  | "identity_right_to_work_status"
+  | "wwcc_status"
+  | "ndiswsc_status"
+  | "ndis_orientation_status"
+  | "qualifications_status"
+  | "first_aid_cpr_status"
+  | "car_insurance_status"
   | "training_needs_status"
   | "uniforms_status"
 >;
@@ -99,14 +110,20 @@ const FIELD_GROUPS: FieldGroup[] = [
       { key: "employment_contract_status", label: "Employment Contract" },
       { key: "code_of_conduct_status", label: "Code of Conduct" },
       { key: "employee_details_form_status", label: "Employee Details Form" },
-      { key: "id_verification_status", label: "ID Verification" },
-      { key: "relevant_insurance_status", label: "Relevant Insurance" },
       { key: "conflict_of_interest_status", label: "Conflict of Interest" },
     ],
   },
   {
-    label: "Compliance",
-    fields: [{ key: "screening_checks_status", label: "Screening Checks" }],
+    label: "Compliance & Identity",
+    fields: [
+      { key: "identity_right_to_work_status", label: "Identity / Right to Work" },
+      { key: "wwcc_status", label: "WWCC" },
+      { key: "ndiswsc_status", label: "NDIS Worker Screening" },
+      { key: "ndis_orientation_status", label: "NDIS Orientation Module" },
+      { key: "qualifications_status", label: "Qualifications" },
+      { key: "first_aid_cpr_status", label: "First Aid & CPR" },
+      { key: "car_insurance_status", label: "Car Insurance" },
+    ],
   },
   {
     label: "Training & Induction",
@@ -128,6 +145,7 @@ const STATUS_LABELS: Record<OnboardingStatus, string> = {
   not_received: "Not Received",
   not_signed: "Not Signed",
   in_progress: "In Progress",
+  pending_verification: "Pending Verification",
   na: "N/A",
 };
 
@@ -144,12 +162,16 @@ const DEFAULT_VALUES: FormValues = {
   employment_contract_status: "not_completed",
   code_of_conduct_status: "not_completed",
   employee_details_form_status: "not_completed",
-  id_verification_status: "not_completed",
-  relevant_insurance_status: "not_completed",
   conflict_of_interest_status: "not_completed",
-  screening_checks_status: "not_completed",
   training_status: "not_completed",
   orientation_induction_status: "not_completed",
+  identity_right_to_work_status: "not_completed",
+  wwcc_status: "not_completed",
+  ndiswsc_status: "not_completed",
+  ndis_orientation_status: "not_completed",
+  qualifications_status: "not_completed",
+  first_aid_cpr_status: "not_completed",
+  car_insurance_status: "not_completed",
   training_needs_status: "not_completed",
   uniforms_status: "not_completed",
 };
@@ -190,12 +212,16 @@ export default function OnboardingForm({
           employment_contract_status: record.employment_contract_status,
           code_of_conduct_status: record.code_of_conduct_status,
           employee_details_form_status: record.employee_details_form_status,
-          id_verification_status: record.id_verification_status,
-          relevant_insurance_status: record.relevant_insurance_status,
           conflict_of_interest_status: record.conflict_of_interest_status,
-          screening_checks_status: record.screening_checks_status,
           training_status: record.training_status,
           orientation_induction_status: record.orientation_induction_status,
+          identity_right_to_work_status: record.identity_right_to_work_status,
+          wwcc_status: record.wwcc_status,
+          ndiswsc_status: record.ndiswsc_status,
+          ndis_orientation_status: record.ndis_orientation_status,
+          qualifications_status: record.qualifications_status,
+          first_aid_cpr_status: record.first_aid_cpr_status,
+          car_insurance_status: record.car_insurance_status,
           training_needs_status: record.training_needs_status,
           uniforms_status: record.uniforms_status,
         }
