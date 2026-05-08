@@ -26,6 +26,10 @@ const STATUS_META: Record<OnboardingStatus, StatusMeta> = {
     label: "In Progress",
     className: "bg-amber-100 text-amber-800",
   },
+  pending_verification: {
+    label: "Pending Verification",
+    className: "bg-amber-100 text-amber-800",
+  },
   na: {
     label: "N/A",
     className: "bg-gray-100 text-gray-600",
@@ -83,6 +87,7 @@ type StatusField = keyof Pick<
   | "relevant_insurance_status"
   | "conflict_of_interest_status"
   | "screening_checks_status"
+  | "ndiswsc_status"
   | "training_status"
   | "orientation_induction_status"
   | "training_needs_status"
@@ -102,6 +107,7 @@ const ALL_STATUS_FIELDS: StatusField[] = [
   "relevant_insurance_status",
   "conflict_of_interest_status",
   "screening_checks_status",
+  "ndiswsc_status",
   "training_status",
   "orientation_induction_status",
   "training_needs_status",

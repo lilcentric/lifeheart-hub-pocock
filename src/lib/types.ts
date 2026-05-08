@@ -4,6 +4,7 @@ export type OnboardingStatus =
   | "not_received"
   | "not_signed"
   | "in_progress"
+  | "pending_verification"
   | "na";
 
 export type UserRole = "admin" | "officer" | "viewer";
@@ -41,6 +42,7 @@ export interface OnboardingRecord {
 
   // Compliance
   screening_checks_status: OnboardingStatus;
+  ndiswsc_status: OnboardingStatus;
 
   // Training & Induction
   training_status: OnboardingStatus;

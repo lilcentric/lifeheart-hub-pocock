@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import OnboardingForm from "@/components/onboarding/OnboardingForm";
+import NdisWscPanel from "@/components/onboarding/NdisWscPanel";
 import type { OnboardingRecord, Profile } from "@/lib/types";
 
 interface Props {
@@ -49,6 +50,8 @@ export default async function EditOnboardingPage({ params }: Props) {
     .order("full_name");
   const officers = (rawOfficers ?? []) as Pick<Profile, "id" | "full_name">[];
 
+  const isAdmin = profile?.role === "admin";
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -58,11 +61,20 @@ export default async function EditOnboardingPage({ params }: Props) {
         </h1>
         <p className="text-sm text-gray-500 mt-0.5">{record.staff_name}</p>
       </div>
-      <OnboardingForm
-        record={record}
-        officers={officers}
-        currentUserRole={profile?.role ?? "viewer"}
-      />
+
+      <div className="space-y-6 max-w-3xl">
+        <NdisWscPanel
+          recordId={id}
+          initialStatus={record.ndiswsc_status}
+          isAdmin={isAdmin}
+        />
+
+        <OnboardingForm
+          record={record}
+          officers={officers}
+          currentUserRole={profile?.role ?? "viewer"}
+        />
+      </div>
     </div>
   );
 }
