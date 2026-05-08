@@ -1,19 +1,36 @@
-import type { OnboardingToken, OnboardingRecord } from "./types";
+import { createClient } from "@/lib/supabase/server";
+import type { OnboardingRecord } from "@/lib/types";
 
-interface TokenDeps {
-  lookupToken: (token: string) => PromiseLike<{ data: OnboardingToken | null; error: unknown }>;
-  getRecord: (recordId: string) => PromiseLike<{ data: OnboardingRecord | null; error: unknown }>;
-}
+export const TokenService = {
+  async generate(recordId: string): Promise<string> {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("onboarding_tokens")
+      .insert({ record_id: recordId })
+      .select("id")
+      .single();
+    if (error || !data) throw new Error(error?.message ?? "Failed to generate token");
+    return (data as { id: string }).id;
+  },
 
-export async function validateToken(
-  token: string,
-  deps: TokenDeps
-): Promise<OnboardingRecord | null> {
-  const { data: tokenRow } = await deps.lookupToken(token);
-  if (!tokenRow || tokenRow.revoked_at !== null) return null;
+  async validate(token: string): Promise<OnboardingRecord | null> {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("onboarding_tokens")
+      .select("onboarding_records(*)")
+      .eq("id", token)
+      .is("revoked_at", null)
+      .single();
+    if (!data) return null;
+    const row = data as unknown as { onboarding_records: OnboardingRecord | null };
+    return row.onboarding_records ?? null;
+  },
 
-  const { data: record } = await deps.getRecord(tokenRow.record_id);
-  if (!record || record.archived) return null;
-
-  return record;
-}
+  async revoke(token: string): Promise<void> {
+    const supabase = await createClient();
+    await supabase
+      .from("onboarding_tokens")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("id", token);
+  },
+};
