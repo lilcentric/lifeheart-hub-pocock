@@ -54,6 +54,15 @@ export default async function EditOnboardingPage({ params }: Props) {
   const isAdmin = profile?.role === "admin";
   const isOfficer = profile?.role === "officer";
 
+  // Fetch signed download URL for the NDISWSC clearance if uploaded
+  let ndiswscDownloadUrl: string | null = null;
+  if (record.ndiswsc_storage_path) {
+    const { data } = await supabase.storage
+      .from("onboarding-docs")
+      .createSignedUrl(record.ndiswsc_storage_path, 3600);
+    ndiswscDownloadUrl = data?.signedUrl ?? null;
+  }
+
   // Fetch the latest active (non-revoked) token for this record
   const { data: rawToken } = await supabase
     .from("onboarding_tokens")
@@ -100,6 +109,7 @@ export default async function EditOnboardingPage({ params }: Props) {
           recordId={id}
           initialStatus={record.ndiswsc_status}
           isAdmin={isAdmin}
+          clearanceDownloadUrl={ndiswscDownloadUrl}
         />
 
         <OnboardingForm

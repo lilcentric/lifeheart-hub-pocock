@@ -12,12 +12,14 @@ interface Props {
   recordId: string;
   initialStatus: OnboardingStatus;
   isAdmin: boolean;
+  clearanceDownloadUrl?: string | null;
 }
 
 export default function NdisWscPanel({
   recordId,
   initialStatus,
   isAdmin,
+  clearanceDownloadUrl,
 }: Props) {
   const [status, setStatus] = useState<OnboardingStatus>(initialStatus);
   const [pending, setPending] = useState(false);
@@ -34,7 +36,6 @@ export default function NdisWscPanel({
     if ("error" in result && result.error) {
       setError(result.error);
     } else if ("success" in result) {
-      // Optimistically update; the page will revalidate in the background
       if (status === "in_progress") setStatus("pending_verification");
       else if (status === "pending_verification") setStatus("completed");
     }
@@ -54,6 +55,17 @@ export default function NdisWscPanel({
           {meta.label}
         </span>
       </div>
+
+      {clearanceDownloadUrl && (
+        <a
+          href={clearanceDownloadUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 underline"
+        >
+          View uploaded clearance
+        </a>
+      )}
 
       {isAdmin && (
         <div className="flex items-center gap-3">

@@ -9,7 +9,12 @@ const baseRecord: OnboardingRecord = {
   onboarding_officer: "officer-uuid",
   date_onboarding_began: null,
   date_shift_began: null,
-  archived: false,
+  archived_at: null,
+  archived_by: null,
+  contract_template_id: null,
+  xero_employee_id: null,
+  wwcc_storage_path: null,
+  ndiswsc_storage_path: null,
   job_application_status: "completed",
   interview_status: "completed",
   reference_checks_status: "completed",
@@ -18,11 +23,15 @@ const baseRecord: OnboardingRecord = {
   employment_contract_status: "not_signed",
   code_of_conduct_status: "in_progress",
   employee_details_form_status: "not_completed",
-  id_verification_status: "not_completed",
-  relevant_insurance_status: "not_completed",
+  identity_right_to_work_status: "not_completed",
+  car_insurance_status: "not_completed",
   conflict_of_interest_status: "completed",
   screening_checks_status: "in_progress",
+  wwcc_status: "not_completed",
   ndiswsc_status: "pending_verification",
+  ndis_orientation_status: "not_completed",
+  qualifications_status: "not_completed",
+  first_aid_cpr_status: "not_completed",
   training_status: "not_completed",
   orientation_induction_status: "not_completed",
   training_needs_status: "na",
@@ -63,6 +72,10 @@ describe("getStaffFacingItems", () => {
     expect(byKey["screening_checks_status"]).toMatchObject({
       label: "Screening Checks",
       status: "in_progress",
+    });
+    expect(byKey["wwcc_status"]).toMatchObject({
+      label: "Working With Children Check",
+      status: "not_completed",
     });
     expect(byKey["training_status"]).toMatchObject({
       label: "Training",
