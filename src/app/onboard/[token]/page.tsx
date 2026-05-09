@@ -21,7 +21,7 @@ export default async function StaffPortalPage({ params }: Props) {
       supabase
         .from("onboarding_tokens")
         .select("*")
-        .eq("token", t)
+        .eq("id", t)
         .maybeSingle()
         .then((res) => ({ data: res.data, error: res.error })),
     getRecord: (recordId) =>
@@ -68,15 +68,32 @@ export default async function StaffPortalPage({ params }: Props) {
             Checklist
           </h2>
           <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white overflow-hidden">
-            {items.map((item) => (
-              <li
-                key={item.key}
-                className="flex items-center justify-between px-4 py-3"
-              >
-                <span className="text-sm text-gray-800">{item.label}</span>
-                <StatusBadge status={item.status} />
-              </li>
-            ))}
+            {items.map((item) => {
+              const isDetailsForm = item.key === "employee_details_form_status";
+              const needsAction =
+                isDetailsForm &&
+                item.status !== "completed" &&
+                item.status !== "pending_verification";
+              return (
+                <li
+                  key={item.key}
+                  className="flex items-center justify-between px-4 py-3"
+                >
+                  <span className="text-sm text-gray-800">{item.label}</span>
+                  <div className="flex items-center gap-3">
+                    {needsAction && (
+                      <a
+                        href={`/onboard/${token}/details`}
+                        className="text-xs font-medium text-gray-900 underline underline-offset-2 hover:text-gray-600"
+                      >
+                        Fill in →
+                      </a>
+                    )}
+                    <StatusBadge status={item.status} />
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </section>
 

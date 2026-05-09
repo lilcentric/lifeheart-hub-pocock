@@ -3,7 +3,8 @@ import { redirect, notFound } from "next/navigation";
 import OnboardingForm from "@/components/onboarding/OnboardingForm";
 import NdisWscPanel from "@/components/onboarding/NdisWscPanel";
 import OnboardingLinkPanel from "@/components/onboarding/OnboardingLinkPanel";
-import type { OnboardingRecord, Profile } from "@/lib/types";
+import StaffDetailsPanel from "@/components/onboarding/StaffDetailsPanel";
+import type { OnboardingRecord, Profile, StaffDetail } from "@/lib/types";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -54,6 +55,14 @@ export default async function EditOnboardingPage({ params }: Props) {
   const isAdmin = profile?.role === "admin";
   const isOfficer = profile?.role === "officer";
 
+  // Fetch submitted staff details (if any)
+  const { data: rawStaffDetail } = await supabase
+    .from("staff_details")
+    .select("*")
+    .eq("record_id", id)
+    .maybeSingle();
+  const staffDetail = rawStaffDetail as StaffDetail | null;
+
   // Fetch the latest active (non-revoked) token for this record
   const { data: rawToken } = await supabase
     .from("onboarding_tokens")
@@ -95,6 +104,8 @@ export default async function EditOnboardingPage({ params }: Props) {
           isOfficer={isOfficer}
           activeToken={activeToken}
         />
+
+        <StaffDetailsPanel detail={staffDetail} />
 
         <NdisWscPanel
           recordId={id}

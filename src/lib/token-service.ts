@@ -1,5 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
-import type { OnboardingRecord } from "@/lib/types";
+import type { OnboardingRecord, OnboardingToken } from "@/lib/types";
+
+interface ValidateTokenDeps {
+  lookupToken: (token: string) => Promise<{ data: OnboardingToken | null; error: unknown }>;
+  getRecord: (recordId: string) => Promise<{ data: OnboardingRecord | null; error: unknown }>;
+}
+
+export async function validateToken(
+  token: string,
+  deps: ValidateTokenDeps
+): Promise<OnboardingRecord | null> {
+  const { data: tokenData } = await deps.lookupToken(token);
+  if (!tokenData || tokenData.revoked_at !== null) return null;
+
+  const { data: record } = await deps.getRecord(tokenData.record_id);
+  return record ?? null;
+}
 
 export const TokenService = {
   async generate(recordId: string): Promise<string> {

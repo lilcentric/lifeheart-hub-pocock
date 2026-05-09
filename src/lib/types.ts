@@ -1,17 +1,5 @@
 export type EmploymentType = "permanent" | "casual";
 
-export interface ContractTemplate {
-  id: string;
-  name: string;
-  employment_type: EmploymentType;
-  version: string;
-  template_id: string;
-  archived: boolean;
-  created_at: string;
-}
-
-export type NewContractTemplate = Omit<ContractTemplate, "id" | "archived" | "created_at">;
-
 export type OnboardingStatus =
   | "completed"
   | "not_completed"
@@ -52,8 +40,10 @@ export interface OnboardingRecord {
   employee_details_form_status: OnboardingStatus;
   conflict_of_interest_status: OnboardingStatus;
 
-  // Compliance
+  // Compliance legacy (Phase 1 — dropped from DB in migration 002 but retained in type for portal-items compat)
   screening_checks_status: OnboardingStatus;
+
+  // NDIS
   ndiswsc_status: OnboardingStatus;
 
   // Training & Induction
@@ -63,7 +53,6 @@ export interface OnboardingRecord {
   // Compliance & identity (Phase 2)
   identity_right_to_work_status: OnboardingStatus;
   wwcc_status: OnboardingStatus;
-  ndiswsc_status: OnboardingStatus;
   ndis_orientation_status: OnboardingStatus;
   qualifications_status: OnboardingStatus;
   first_aid_cpr_status: OnboardingStatus;
@@ -75,31 +64,17 @@ export interface OnboardingRecord {
   // Admin legacy
   uniforms_status: OnboardingStatus;
 
-<<<<<<< claude/wizardly-heyrovsky-5677df
-=======
   // Archive
   archived_at: string | null;
   archived_by: string | null;
 
   // Phase 2 metadata
   contract_template_id: string | null;
->>>>>>> main
   xero_employee_id: string | null;
 
   created_at: string;
   updated_at: string;
 }
-
-export interface OnboardingToken {
-  token: string;
-  record_id: string;
-  revoked_at: string | null;
-  created_at: string;
-}
-
-export type OnboardingRecordWithOfficer = OnboardingRecord & {
-  officer_profile: Pick<Profile, "id" | "full_name"> | null;
-};
 
 export interface OnboardingToken {
   id: string;
@@ -108,6 +83,10 @@ export interface OnboardingToken {
   revoked_at: string | null;
   created_at: string;
 }
+
+export type OnboardingRecordWithOfficer = OnboardingRecord & {
+  officer_profile: Pick<Profile, "id" | "full_name"> | null;
+};
 
 export interface OnboardingDocument {
   id: string;
@@ -122,11 +101,15 @@ export interface StaffDetail {
   record_id: string;
   first_name: string;
   last_name: string;
+  preferred_name: string | null;
+  personal_email: string | null;
   phone: string | null;
-  address: string | null;
   emergency_contact_name: string | null;
+  emergency_contact_relationship: string | null;
   emergency_contact_phone: string | null;
   right_to_work: string | null;
+  visa_type: string | null;
+  visa_expiry_date: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -140,6 +123,8 @@ export interface ContractTemplate {
   archived: boolean;
   created_at: string;
 }
+
+export type NewContractTemplate = Omit<ContractTemplate, "id" | "archived" | "created_at">;
 
 // Supabase Database type (minimal — replace with codegen output once project is linked)
 export interface Database {
@@ -163,10 +148,10 @@ export interface Database {
       };
       onboarding_tokens: {
         Row: OnboardingToken;
-        Insert: Omit<OnboardingToken, "token" | "created_at"> & {
-          token?: string;
+        Insert: Omit<OnboardingToken, "id" | "created_at"> & {
+          id?: string;
         };
-        Update: Partial<Omit<OnboardingToken, "token" | "created_at">>;
+        Update: Partial<Omit<OnboardingToken, "id" | "created_at">>;
         Relationships: [];
       };
     };
