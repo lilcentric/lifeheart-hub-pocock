@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { validateToken } from "@/lib/token-service";
 import { getStaffFacingItems } from "@/utils/portal-items";
 import StatusBadge from "@/components/onboarding/StatusBadge";
+import WwccPanel from "@/components/onboarding/WwccPanel";
 
 interface Props {
   params: Promise<{ token: string }>;
@@ -71,10 +72,15 @@ export default async function StaffPortalPage({ params }: Props) {
             {items.map((item) => (
               <li
                 key={item.key}
-                className="flex items-center justify-between px-4 py-3"
+                className="px-4 py-3"
               >
-                <span className="text-sm text-gray-800">{item.label}</span>
-                <StatusBadge status={item.status} />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-800">{item.label}</span>
+                  <StatusBadge status={item.status} />
+                </div>
+                {item.key === "wwcc_status" && (
+                  <WwccPanel recordId={record.id} currentStatus={item.status} />
+                )}
               </li>
             ))}
           </ul>
