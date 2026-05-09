@@ -1,17 +1,5 @@
 export type EmploymentType = "permanent" | "casual";
 
-export interface ContractTemplate {
-  id: string;
-  name: string;
-  employment_type: EmploymentType;
-  version: string;
-  template_id: string;
-  archived: boolean;
-  created_at: string;
-}
-
-export type NewContractTemplate = Omit<ContractTemplate, "id" | "archived" | "created_at">;
-
 export type OnboardingStatus =
   | "completed"
   | "not_completed"
@@ -28,6 +16,18 @@ export interface Profile {
   full_name: string;
   role: UserRole;
 }
+
+export interface ContractTemplate {
+  id: string;
+  name: string;
+  employment_type: EmploymentType;
+  version: string;
+  annature_template_id: string;
+  archived: boolean;
+  created_at: string;
+}
+
+export type NewContractTemplate = Omit<ContractTemplate, "id" | "archived" | "created_at">;
 
 export interface OnboardingRecord {
   id: string;
@@ -63,7 +63,6 @@ export interface OnboardingRecord {
   // Compliance & identity (Phase 2)
   identity_right_to_work_status: OnboardingStatus;
   wwcc_status: OnboardingStatus;
-  ndiswsc_status: OnboardingStatus;
   ndis_orientation_status: OnboardingStatus;
   qualifications_status: OnboardingStatus;
   first_aid_cpr_status: OnboardingStatus;
@@ -75,26 +74,22 @@ export interface OnboardingRecord {
   // Admin legacy
   uniforms_status: OnboardingStatus;
 
-<<<<<<< claude/wizardly-heyrovsky-5677df
-=======
   // Archive
   archived_at: string | null;
   archived_by: string | null;
 
   // Phase 2 metadata
   contract_template_id: string | null;
->>>>>>> main
+
+  // TNA
+  tna_envelope_id: string | null;
+  tna_staff_signed_at: string | null;
+  tna_status: OnboardingStatus;
+
   xero_employee_id: string | null;
 
   created_at: string;
   updated_at: string;
-}
-
-export interface OnboardingToken {
-  token: string;
-  record_id: string;
-  revoked_at: string | null;
-  created_at: string;
 }
 
 export type OnboardingRecordWithOfficer = OnboardingRecord & {
@@ -131,16 +126,6 @@ export interface StaffDetail {
   updated_at: string;
 }
 
-export interface ContractTemplate {
-  id: string;
-  name: string;
-  employment_type: string;
-  version: string;
-  annature_template_id: string;
-  archived: boolean;
-  created_at: string;
-}
-
 // Supabase Database type (minimal — replace with codegen output once project is linked)
 export interface Database {
   public: {
@@ -163,10 +148,10 @@ export interface Database {
       };
       onboarding_tokens: {
         Row: OnboardingToken;
-        Insert: Omit<OnboardingToken, "token" | "created_at"> & {
-          token?: string;
+        Insert: Omit<OnboardingToken, "id" | "created_at"> & {
+          id?: string;
         };
-        Update: Partial<Omit<OnboardingToken, "token" | "created_at">>;
+        Update: Partial<Omit<OnboardingToken, "id" | "created_at">>;
         Relationships: [];
       };
     };
