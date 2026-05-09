@@ -54,6 +54,8 @@ export interface OnboardingRecord {
   // Admin legacy
   uniforms_status: OnboardingStatus;
 
+  xero_employee_id: string | null;
+
   created_at: string;
   updated_at: string;
 }
