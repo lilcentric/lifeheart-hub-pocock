@@ -75,12 +75,15 @@ export interface OnboardingRecord {
   // Admin legacy
   uniforms_status: OnboardingStatus;
 
+<<<<<<< claude/wizardly-heyrovsky-5677df
+=======
   // Archive
   archived_at: string | null;
   archived_by: string | null;
 
   // Phase 2 metadata
   contract_template_id: string | null;
+>>>>>>> main
   xero_employee_id: string | null;
 
   created_at: string;
