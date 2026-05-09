@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { LayoutDashboard, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, FileText, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -13,8 +13,9 @@ interface Props {
 }
 
 const nav = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/onboarding", label: "Onboarding", icon: Users },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "officer", "viewer"] },
+  { href: "/onboarding", label: "Onboarding", icon: Users, roles: ["admin", "officer", "viewer"] },
+  { href: "/admin/contract-templates", label: "Contract Templates", icon: FileText, roles: ["admin"] },
 ];
 
 export default function Sidebar({ userEmail, userName, userRole }: Props) {
@@ -37,21 +38,23 @@ export default function Sidebar({ userEmail, userName, userRole }: Props) {
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {nav.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-              pathname.startsWith(href)
-                ? "bg-gray-100 text-gray-900"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-            )}
-          >
-            <Icon className="h-4 w-4 shrink-0" />
-            {label}
-          </Link>
-        ))}
+        {nav
+          .filter(({ roles }) => roles.includes(userRole))
+          .map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                pathname.startsWith(href)
+                  ? "bg-gray-100 text-gray-900"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              {label}
+            </Link>
+          ))}
       </nav>
 
       <div className="px-3 py-4 border-t border-gray-200 space-y-1">
