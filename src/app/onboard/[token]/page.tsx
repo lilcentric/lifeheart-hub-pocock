@@ -2,6 +2,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { validateToken } from "@/lib/token-service";
 import { getStaffFacingItems } from "@/utils/portal-items";
 import StatusBadge from "@/components/onboarding/StatusBadge";
+import MultiFileUpload from "@/components/onboarding/MultiFileUpload";
+import type { OnboardingDocument } from "@/lib/types";
 
 interface Props {
   params: Promise<{ token: string }>;
@@ -17,20 +19,20 @@ export default async function StaffPortalPage({ params }: Props) {
   const supabase = createServiceClient();
 
   const record = await validateToken(token, {
-    lookupToken: (t) =>
+    lookupToken: (t: string) =>
       supabase
         .from("onboarding_tokens")
         .select("*")
-        .eq("token", t)
+        .eq("id", t)
         .maybeSingle()
-        .then((res) => ({ data: res.data, error: res.error })),
-    getRecord: (recordId) =>
+        .then((res) => ({ data: res.data as never, error: res.error })),
+    getRecord: (recordId: string) =>
       supabase
         .from("onboarding_records")
         .select("*")
         .eq("id", recordId)
         .maybeSingle()
-        .then((res) => ({ data: res.data, error: res.error })),
+        .then((res) => ({ data: res.data as never, error: res.error })),
   });
 
   if (!record) {
@@ -38,6 +40,14 @@ export default async function StaffPortalPage({ params }: Props) {
   }
 
   const items = getStaffFacingItems(record);
+
+  const { data: rawDocs } = await supabase
+    .from("onboarding_documents")
+    .select("*")
+    .eq("record_id", record.id)
+    .in("document_type", ["qualifications", "first_aid_cpr"]);
+  const docs = (rawDocs ?? []) as OnboardingDocument[];
+  const countByType = (type: string) => docs.filter((d) => d.document_type === type).length;
 
   const signedUrls = await Promise.all(
     REFERENCE_DOCS.map(async (doc) => {
@@ -68,15 +78,33 @@ export default async function StaffPortalPage({ params }: Props) {
             Checklist
           </h2>
           <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white overflow-hidden">
-            {items.map((item) => (
-              <li
-                key={item.key}
-                className="flex items-center justify-between px-4 py-3"
-              >
-                <span className="text-sm text-gray-800">{item.label}</span>
-                <StatusBadge status={item.status} />
-              </li>
-            ))}
+            {items.map((item) => {
+              const isUploadItem =
+                item.key === "qualifications_status" ||
+                item.key === "first_aid_cpr_status";
+              const docType = item.key === "qualifications_status"
+                ? "qualifications"
+                : "first_aid_cpr";
+
+              return (
+                <li key={item.key} className="px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-800">{item.label}</span>
+                    <StatusBadge status={item.status} />
+                  </div>
+                  {isUploadItem && (
+                    <div className="mt-3">
+                      <MultiFileUpload
+                        token={token}
+                        documentType={docType}
+                        label={`Upload ${item.label} certificates`}
+                        initialCount={countByType(docType)}
+                      />
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
 

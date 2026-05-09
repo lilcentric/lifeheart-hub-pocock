@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import type { ContractTemplate, NewContractTemplate, UserRole } from "./types";
+import type { ContractTemplate, UserRole } from "./types";
 
 export const newTemplateSchema = z.object({
   name: z.string().min(1, "Name is required"),
   employment_type: z.enum(["permanent", "casual"]),
   version: z.string().min(1, "Version is required"),
-  template_id: z.string().min(1, "Template ID is required"),
+  annature_template_id: z.string().min(1, "Annature template ID is required"),
 });
 
 export async function getActiveTemplates(): Promise<ContractTemplate[]> {

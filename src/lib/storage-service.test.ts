@@ -165,7 +165,7 @@ describe("recordMultiUpload", () => {
     expect(dbMock._chain.insert).toHaveBeenCalledWith({
       record_id: "LF-HDC-00002",
       document_type: "qualifications",
-      path: "onboarding/LF-HDC-00002/qualifications/cert.pdf",
+      storage_path: "onboarding/LF-HDC-00002/qualifications/cert.pdf",
       filename: "cert.pdf",
     });
   });
