@@ -38,7 +38,7 @@ export class StorageService {
     const column = `${documentType}_storage_path`;
     const { error } = await this.db
       .from("onboarding_records")
-      .update({ [column]: path })
+      .update({ [column]: path } as never)
       .eq("id", recordId);
     if (error) throw new Error(error.message);
   }
@@ -60,9 +60,9 @@ export class StorageService {
     const { error } = await this.db.from("onboarding_documents").insert({
       record_id: recordId,
       document_type: documentType,
-      path,
+      storage_path: path,
       filename,
-    });
+    } as never);
     if (error) throw new Error(error.message);
   }
 

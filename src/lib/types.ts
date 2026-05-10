@@ -17,6 +17,18 @@ export interface Profile {
   role: UserRole;
 }
 
+export interface ContractTemplate {
+  id: string;
+  name: string;
+  employment_type: EmploymentType;
+  version: string;
+  annature_template_id: string;
+  archived: boolean;
+  created_at: string;
+}
+
+export type NewContractTemplate = Omit<ContractTemplate, "id" | "archived" | "created_at">;
+
 export interface OnboardingRecord {
   id: string;
   created_by: string | null;
@@ -41,14 +53,7 @@ export interface OnboardingRecord {
   conflict_of_interest_status: OnboardingStatus;
 
   // Compliance
-  screening_checks_status: OnboardingStatus;
   ndiswsc_status: OnboardingStatus;
-
-  // Training & Induction
-  training_status: OnboardingStatus;
-  orientation_induction_status: OnboardingStatus;
-
-  // Compliance & identity (Phase 2)
   identity_right_to_work_status: OnboardingStatus;
   wwcc_status: OnboardingStatus;
   ndis_orientation_status: OnboardingStatus;
@@ -56,15 +61,15 @@ export interface OnboardingRecord {
   first_aid_cpr_status: OnboardingStatus;
   car_insurance_status: OnboardingStatus;
 
+  // Training & Induction
+  training_status: OnboardingStatus;
+  orientation_induction_status: OnboardingStatus;
+
   // Training legacy
   training_needs_status: OnboardingStatus;
 
   // Admin legacy
   uniforms_status: OnboardingStatus;
-
-  // Storage paths for uploaded documents
-  wwcc_storage_path: string | null;
-  ndiswsc_storage_path: string | null;
 
   // Archive
   archived_at: string | null;
@@ -74,22 +79,31 @@ export interface OnboardingRecord {
   contract_template_id: string | null;
   xero_employee_id: string | null;
 
-  created_at: string;
-  updated_at: string;
-}
+  // Phase 2 storage paths (single-file uploads)
+  identity_right_to_work_storage_path: string | null;
+  ndis_orientation_storage_path: string | null;
+  car_insurance_storage_path: string | null;
 
 export interface OnboardingToken {
   id: string;
   record_id: string;
+  staff_email: string;
   revoked_at: string | null;
   created_at: string;
+  updated_at: string;
 }
+
+export type OnboardingRecordWithOfficer = OnboardingRecord & {
+  officer_profile: Pick<Profile, "id" | "full_name"> | null;
+};
 
 export interface OnboardingDocument {
   id: string;
-  record_id: string;
-  document_type: string;
-  storage_path: string;
+  name: string;
+  employment_type: string;
+  version: string;
+  annature_template_id: string;
+  archived: boolean;
   created_at: string;
 }
 
@@ -98,27 +112,18 @@ export interface StaffDetail {
   record_id: string;
   first_name: string;
   last_name: string;
+  preferred_name: string | null;
+  personal_email: string | null;
   phone: string | null;
-  address: string | null;
   emergency_contact_name: string | null;
+  emergency_contact_relationship: string | null;
   emergency_contact_phone: string | null;
   right_to_work: string | null;
+  visa_type: string | null;
+  visa_expiry_date: string | null;
   created_at: string;
   updated_at: string;
 }
-
-export interface ContractTemplate {
-  id: string;
-  name: string;
-  employment_type: EmploymentType;
-  version: string;
-  template_id: string;
-  annature_template_id: string;
-  archived: boolean;
-  created_at: string;
-}
-
-export type NewContractTemplate = Omit<ContractTemplate, "id" | "archived" | "created_at">;
 
 // Supabase Database type (minimal — replace with codegen output once project is linked)
 export interface Database {
@@ -142,10 +147,8 @@ export interface Database {
       };
       onboarding_tokens: {
         Row: OnboardingToken;
-        Insert: Omit<OnboardingToken, "created_at"> & {
-          id?: string;
-        };
-        Update: Partial<Omit<OnboardingToken, "created_at">>;
+        Insert: Omit<OnboardingToken, "created_at">;
+        Update: Partial<Omit<OnboardingToken, "id" | "created_at">>;
         Relationships: [];
       };
     };
