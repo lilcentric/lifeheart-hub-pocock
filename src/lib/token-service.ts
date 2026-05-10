@@ -16,6 +16,20 @@ export async function validateToken(
   return record ?? null;
 }
 
+export async function validateToken(
+  token: string,
+  deps: {
+    lookupToken: (t: string) => Promise<{ data: { record_id: string } | null; error: unknown }>;
+    getRecord: (id: string) => Promise<{ data: OnboardingRecord | null; error: unknown }>;
+  }
+): Promise<OnboardingRecord | null> {
+  const { data: tokenRow, error: tokenErr } = await deps.lookupToken(token);
+  if (tokenErr || !tokenRow) return null;
+  const { data: record, error: recordErr } = await deps.getRecord(tokenRow.record_id);
+  if (recordErr || !record) return null;
+  return record;
+}
+
 export const TokenService = {
   async generate(recordId: string): Promise<string> {
     const supabase = await createClient();

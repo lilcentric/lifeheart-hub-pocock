@@ -148,6 +148,7 @@ export default async function EditOnboardingPage({ params }: Props) {
           recordId={id}
           initialStatus={record.ndiswsc_status}
           isAdmin={isAdmin}
+          clearanceDownloadUrl={ndiswscDownloadUrl}
         />
 
         <UploadedDocumentsPanel groups={documentGroups} />
