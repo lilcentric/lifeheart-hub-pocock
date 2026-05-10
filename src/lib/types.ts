@@ -112,11 +112,15 @@ export interface StaffDetail {
   record_id: string;
   first_name: string;
   last_name: string;
+  preferred_name: string | null;
+  personal_email: string | null;
   phone: string | null;
-  address: string | null;
   emergency_contact_name: string | null;
+  emergency_contact_relationship: string | null;
   emergency_contact_phone: string | null;
   right_to_work: string | null;
+  visa_type: string | null;
+  visa_expiry_date: string | null;
   created_at: string;
   updated_at: string;
 }
