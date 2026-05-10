@@ -24,14 +24,16 @@ const baseRecord: OnboardingRecord = {
   identity_right_to_work_status: "not_completed",
   car_insurance_status: "not_completed",
   conflict_of_interest_status: "completed",
-  screening_checks_status: "in_progress",
-  wwcc_status: "not_completed",
+  wwcc_status: "in_progress",
   ndiswsc_status: "pending_verification",
   ndis_orientation_status: "not_completed",
   qualifications_status: "not_completed",
   first_aid_cpr_status: "not_completed",
   training_status: "not_completed",
   orientation_induction_status: "not_completed",
+  ndis_orientation_status: "not_completed",
+  qualifications_status: "not_completed",
+  first_aid_cpr_status: "not_completed",
   training_needs_status: "na",
   uniforms_status: "na",
   created_at: "2026-01-01T00:00:00Z",
@@ -67,8 +69,8 @@ describe("getStaffFacingItems", () => {
       label: "Code of Conduct",
       status: "in_progress",
     });
-    expect(byKey["screening_checks_status"]).toMatchObject({
-      label: "Screening Checks",
+    expect(byKey["wwcc_status"]).toMatchObject({
+      label: "Working With Children Check",
       status: "in_progress",
     });
     expect(byKey["wwcc_status"]).toMatchObject({

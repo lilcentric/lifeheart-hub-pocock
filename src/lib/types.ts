@@ -41,7 +41,6 @@ export interface OnboardingRecord {
   conflict_of_interest_status: OnboardingStatus;
 
   // Compliance
-  screening_checks_status: OnboardingStatus;
   ndiswsc_status: OnboardingStatus;
 
   // Training & Induction
@@ -82,6 +81,10 @@ export interface OnboardingToken {
   created_at: string;
 }
 
+export type OnboardingRecordWithOfficer = OnboardingRecord & {
+  officer_profile: Pick<Profile, "id" | "full_name"> | null;
+};
+
 export interface OnboardingDocument {
   id: string;
   record_id: string;
@@ -103,19 +106,6 @@ export interface StaffDetail {
   created_at: string;
   updated_at: string;
 }
-
-export interface ContractTemplate {
-  id: string;
-  name: string;
-  employment_type: EmploymentType;
-  version: string;
-  template_id: string;
-  annature_template_id: string;
-  archived: boolean;
-  created_at: string;
-}
-
-export type NewContractTemplate = Omit<ContractTemplate, "id" | "archived" | "created_at">;
 
 // Supabase Database type (minimal — replace with codegen output once project is linked)
 export interface Database {
@@ -139,10 +129,8 @@ export interface Database {
       };
       onboarding_tokens: {
         Row: OnboardingToken;
-        Insert: Omit<OnboardingToken, "created_at"> & {
-          id?: string;
-        };
-        Update: Partial<Omit<OnboardingToken, "created_at">>;
+        Insert: Omit<OnboardingToken, "created_at">;
+        Update: Partial<Omit<OnboardingToken, "id" | "created_at">>;
         Relationships: [];
       };
     };

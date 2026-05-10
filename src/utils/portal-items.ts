@@ -15,7 +15,6 @@ type StaffStatusKey = keyof Pick<
   | "identity_right_to_work_status"
   | "car_insurance_status"
   | "conflict_of_interest_status"
-  | "screening_checks_status"
   | "wwcc_status"
   | "ndiswsc_status"
   | "training_status"
@@ -30,7 +29,6 @@ const STAFF_ITEMS: { key: StaffStatusKey; label: string }[] = [
   { key: "identity_right_to_work_status", label: "Identity & Right to Work" },
   { key: "car_insurance_status", label: "Car Insurance" },
   { key: "conflict_of_interest_status", label: "Conflict of Interest" },
-  { key: "screening_checks_status", label: "Screening Checks" },
   { key: "wwcc_status", label: "Working With Children Check" },
   { key: "ndiswsc_status", label: "NDIS Worker Screening Check" },
   { key: "training_status", label: "Training" },
