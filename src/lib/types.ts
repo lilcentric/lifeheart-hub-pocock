@@ -53,7 +53,6 @@ export interface OnboardingRecord {
   conflict_of_interest_status: OnboardingStatus;
 
   // Compliance
-  screening_checks_status: OnboardingStatus;
   ndiswsc_status: OnboardingStatus;
 
   // Training & Induction
@@ -80,21 +79,11 @@ export interface OnboardingRecord {
 
   // Phase 2 metadata
   contract_template_id: string | null;
-
-  // TNA
-  tna_envelope_id: string | null;
-  tna_staff_signed_at: string | null;
-  tna_status: OnboardingStatus;
-
   xero_employee_id: string | null;
 
   created_at: string;
   updated_at: string;
 }
-
-export type OnboardingRecordWithOfficer = OnboardingRecord & {
-  officer_profile: Pick<Profile, "id" | "full_name"> | null;
-};
 
 export interface OnboardingToken {
   id: string;
@@ -103,6 +92,10 @@ export interface OnboardingToken {
   revoked_at: string | null;
   created_at: string;
 }
+
+export type OnboardingRecordWithOfficer = OnboardingRecord & {
+  officer_profile: Pick<Profile, "id" | "full_name"> | null;
+};
 
 export interface OnboardingDocument {
   id: string;
@@ -148,9 +141,7 @@ export interface Database {
       };
       onboarding_tokens: {
         Row: OnboardingToken;
-        Insert: Omit<OnboardingToken, "id" | "created_at"> & {
-          id?: string;
-        };
+        Insert: Omit<OnboardingToken, "created_at">;
         Update: Partial<Omit<OnboardingToken, "id" | "created_at">>;
         Relationships: [];
       };

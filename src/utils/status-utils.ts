@@ -82,7 +82,6 @@ type StatusField = keyof Pick<
   | "code_of_conduct_status"
   | "employee_details_form_status"
   | "conflict_of_interest_status"
-  | "screening_checks_status"
   | "ndiswsc_status"
   | "training_status"
   | "orientation_induction_status"
@@ -107,7 +106,6 @@ const ALL_STATUS_FIELDS: StatusField[] = [
   "code_of_conduct_status",
   "employee_details_form_status",
   "conflict_of_interest_status",
-  "screening_checks_status",
   "ndiswsc_status",
   "training_status",
   "orientation_induction_status",

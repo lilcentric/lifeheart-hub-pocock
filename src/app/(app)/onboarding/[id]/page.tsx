@@ -3,7 +3,10 @@ import { redirect, notFound } from "next/navigation";
 import OnboardingForm from "@/components/onboarding/OnboardingForm";
 import NdisWscPanel from "@/components/onboarding/NdisWscPanel";
 import OnboardingLinkPanel from "@/components/onboarding/OnboardingLinkPanel";
-import type { OnboardingRecord, Profile } from "@/lib/types";
+import ArchiveButton from "@/components/onboarding/ArchiveButton";
+import BundleBPanel from "@/components/onboarding/BundleBPanel";
+import { getActiveTemplates } from "@/lib/contract-templates";
+import type { OnboardingRecord, Profile, ContractTemplate } from "@/lib/types";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -54,16 +57,20 @@ export default async function EditOnboardingPage({ params }: Props) {
   const isAdmin = profile?.role === "admin";
   const isOfficer = profile?.role === "officer";
 
-  // Fetch the latest active (non-revoked) token for this record
+  // Fetch the latest active (non-revoked) token for this record (includes email for Bundle B)
   const { data: rawToken } = await supabase
     .from("onboarding_tokens")
-    .select("id")
+    .select("id, staff_email")
     .eq("record_id", id)
     .is("revoked_at", null)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  const activeToken = rawToken as { id: string } | null;
+  const activeToken = rawToken as { id: string; staff_email: string } | null;
+
+  const activeTemplates = isAdmin
+    ? await getActiveTemplates().catch(() => [] as ContractTemplate[])
+    : [];
 
   return (
     <div className="p-6">
@@ -93,8 +100,16 @@ export default async function EditOnboardingPage({ params }: Props) {
           recordId={id}
           isAdmin={isAdmin}
           isOfficer={isOfficer}
-          activeToken={activeToken}
+          activeToken={activeToken ? { id: activeToken.id } : null}
         />
+
+        {isAdmin && activeToken && activeTemplates.length > 0 && (
+          <BundleBPanel
+            recordId={id}
+            staffEmail={activeToken.staff_email}
+            templates={activeTemplates}
+          />
+        )}
 
         <NdisWscPanel
           recordId={id}

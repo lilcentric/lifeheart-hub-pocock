@@ -1,52 +1,70 @@
 const ANNATURE_BASE = "https://api.annature.com.au";
 
-export interface SendTNADeps {
+export interface SendBundleBDeps {
   fetch: typeof globalThis.fetch;
   annatureId: string;
   annatureKey: string;
   accountId: string;
-  templateId: string;
-  staffRoleId: string;
-  adminRoleId: string;
+  roleId: string;
+  flexibleWorkingTemplateId: string;
+  corePolicyTemplateId: string;
+  highIntensityTemplateId: string;
+  behaviourSupportTemplateId: string;
+  getContractAnnatureTemplateId: (contractTemplateId: string) => Promise<string | null>;
   persistEnvelopeId: (
     recordId: string,
     envelopeId: string
   ) => Promise<{ error: string | null }>;
 }
 
-export type SendTNAResult =
+export type SendBundleBResult =
   | { envelopeId: string }
   | { error: string };
 
-export async function executeSendTNA(
+export async function executeSendBundleB(
   recordId: string,
+  contractTemplateId: string,
   staffEmail: string,
-  adminEmail: string,
-  deps: SendTNADeps
-): Promise<SendTNAResult> {
-  const { fetch, annatureId, annatureKey, accountId, templateId, staffRoleId, adminRoleId, persistEnvelopeId } = deps;
+  deps: SendBundleBDeps
+): Promise<SendBundleBResult> {
+  const {
+    fetch,
+    annatureId,
+    annatureKey,
+    accountId,
+    roleId,
+    flexibleWorkingTemplateId,
+    corePolicyTemplateId,
+    highIntensityTemplateId,
+    behaviourSupportTemplateId,
+    getContractAnnatureTemplateId,
+    persistEnvelopeId,
+  } = deps;
+
+  const contractAnnatureTemplateId = await getContractAnnatureTemplateId(contractTemplateId);
+  if (!contractAnnatureTemplateId) return { error: "Contract template not found" };
 
   let response: Response;
   try {
-    response = await fetch(
-      `${ANNATURE_BASE}/v1/templates/${templateId}/use`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Annature-Id": annatureId,
-          "X-Annature-Key": annatureKey,
-        },
-        body: JSON.stringify({
-          account_id: accountId,
-          signing_order: "sequential",
-          recipients: [
-            { role_id: staffRoleId, email: staffEmail, signing_order: 1 },
-            { role_id: adminRoleId, email: adminEmail, signing_order: 2 },
-          ],
-        }),
-      }
-    );
+    response = await fetch(`${ANNATURE_BASE}/v1/envelopes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Annature-Id": annatureId,
+        "X-Annature-Key": annatureKey,
+      },
+      body: JSON.stringify({
+        account_id: accountId,
+        recipients: [{ role_id: roleId, email: staffEmail }],
+        template_ids: [
+          contractAnnatureTemplateId,
+          flexibleWorkingTemplateId,
+          corePolicyTemplateId,
+          highIntensityTemplateId,
+          behaviourSupportTemplateId,
+        ],
+      }),
+    });
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Network error" };
   }
