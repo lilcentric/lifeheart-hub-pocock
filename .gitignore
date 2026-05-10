@@ -25,3 +25,16 @@ next-env.d.ts
 # OS
 .DS_Store
 Thumbs.db
+
+# Supabase CLI temp files (contain connection strings and project refs)
+supabase/.temp/
+
+# Backup scripts
+scripts/*.bak
+
+# Claude IDE local worktree state
+.claire/
+.claude/
+
+# Local WIP notes
+.scratch/
