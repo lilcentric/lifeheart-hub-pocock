@@ -32,6 +32,7 @@ describe("deriveOverallStatus", () => {
     code_of_conduct_status: "completed",
     employee_details_form_status: "completed",
     conflict_of_interest_status: "completed",
+    screening_checks_status: "completed",
     training_status: "completed",
     orientation_induction_status: "completed",
     training_needs_status: "completed",
