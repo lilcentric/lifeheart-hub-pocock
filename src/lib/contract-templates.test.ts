@@ -35,7 +35,7 @@ const template: ContractTemplate = {
   name: "Standard Perm",
   employment_type: "permanent",
   version: "1.0",
-  template_id: "ann_001",
+  annature_template_id: "ann_001",
   archived: false,
   created_at: "2026-01-01T00:00:00Z",
 };
@@ -47,7 +47,7 @@ beforeEach(() => vi.clearAllMocks());
 describe("addTemplate", () => {
   it("throws a ZodError when name is missing", async () => {
     await expect(
-      addTemplate({ employment_type: "permanent", version: "1.0", template_id: "ann_001" })
+      addTemplate({ employment_type: "permanent", version: "1.0", annature_template_id: "ann_001" })
     ).rejects.toBeInstanceOf(ZodError);
   });
 
@@ -61,7 +61,7 @@ describe("addTemplate", () => {
       name: "New Casual",
       employment_type: "casual",
       version: "2.0",
-      template_id: "ann_002",
+      annature_template_id: "ann_002",
     });
 
     expect(result).toEqual(created);

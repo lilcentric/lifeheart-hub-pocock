@@ -97,7 +97,7 @@ export default function ContractTemplatesClient({ templates: initial }: Props) {
                   <div>
                     <p className="text-sm font-medium text-gray-900">{t.name}</p>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      v{t.version} · {t.template_id}
+                      v{t.version} · {t.annature_template_id}
                     </p>
                   </div>
                   <button
@@ -172,13 +172,13 @@ export default function ContractTemplatesClient({ templates: initial }: Props) {
                 Annature template ID
               </label>
               <input
-                {...register("template_id")}
+                {...register("annature_template_id")}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                 placeholder="e.g. ann_perm_ft_v3"
               />
-              {errors.template_id && (
+              {errors.annature_template_id && (
                 <p className="text-xs text-red-600 mt-1">
-                  {errors.template_id.message}
+                  {errors.annature_template_id.message}
                 </p>
               )}
             </div>

@@ -42,18 +42,16 @@ export interface OnboardingRecord {
 
   // Compliance
   ndiswsc_status: OnboardingStatus;
-
-  // Training & Induction
-  training_status: OnboardingStatus;
-  orientation_induction_status: OnboardingStatus;
-
-  // Compliance & identity (Phase 2)
   identity_right_to_work_status: OnboardingStatus;
   wwcc_status: OnboardingStatus;
   ndis_orientation_status: OnboardingStatus;
   qualifications_status: OnboardingStatus;
   first_aid_cpr_status: OnboardingStatus;
   car_insurance_status: OnboardingStatus;
+
+  // Training & Induction
+  training_status: OnboardingStatus;
+  orientation_induction_status: OnboardingStatus;
 
   // Training legacy
   training_needs_status: OnboardingStatus;
@@ -89,9 +87,11 @@ export type OnboardingRecordWithOfficer = OnboardingRecord & {
 
 export interface OnboardingDocument {
   id: string;
-  record_id: string;
-  document_type: string;
-  storage_path: string;
+  name: string;
+  employment_type: string;
+  version: string;
+  annature_template_id: string;
+  archived: boolean;
   created_at: string;
 }
 

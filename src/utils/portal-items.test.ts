@@ -96,6 +96,22 @@ describe("getStaffFacingItems", () => {
 
     expect(ndis?.status).toBe("in_progress");
   });
+
+  it("includes qualifications_status with correct label and status", () => {
+    const record = { ...baseRecord, qualifications_status: "not_completed" as const };
+    const items = getStaffFacingItems(record);
+    const item = items.find((i) => i.key === "qualifications_status");
+
+    expect(item).toMatchObject({ label: "Qualifications", status: "not_completed" });
+  });
+
+  it("includes first_aid_cpr_status with correct label and status", () => {
+    const record = { ...baseRecord, first_aid_cpr_status: "completed" as const };
+    const items = getStaffFacingItems(record);
+    const item = items.find((i) => i.key === "first_aid_cpr_status");
+
+    expect(item).toMatchObject({ label: "First Aid & CPR", status: "completed" });
+  });
 });
 
 describe("getUploadItems", () => {

@@ -72,6 +72,39 @@ export default async function EditOnboardingPage({ params }: Props) {
     ? await getActiveTemplates().catch(() => [] as ContractTemplate[])
     : [];
 
+  const { data: rawDocs } = await supabase
+    .from("onboarding_documents")
+    .select("*")
+    .eq("record_id", id)
+    .in("document_type", ["qualifications", "first_aid_cpr"])
+    .order("created_at", { ascending: true });
+  const uploadedDocs = (rawDocs ?? []) as OnboardingDocument[];
+
+  const DOCUMENT_TYPES = [
+    { type: "qualifications", label: "Qualifications" },
+    { type: "first_aid_cpr", label: "First Aid & CPR" },
+  ] as const;
+
+  const documentGroups = await Promise.all(
+    DOCUMENT_TYPES.map(async ({ type, label }) => {
+      const docs = uploadedDocs.filter((d) => d.document_type === type);
+      const documents = await Promise.all(
+        docs.map(async (doc) => {
+          const { data } = await supabase.storage
+            .from("documents")
+            .createSignedUrl(doc.storage_path, 3600);
+          return {
+            filename: doc.filename,
+            storagePath: doc.storage_path,
+            signedUrl: data?.signedUrl ?? null,
+            uploadedAt: doc.created_at,
+          };
+        })
+      );
+      return { type, label, documents };
+    })
+  );
+
   return (
     <div className="p-6">
       <div className="mb-6 flex items-start justify-between">
@@ -116,6 +149,8 @@ export default async function EditOnboardingPage({ params }: Props) {
           initialStatus={record.ndiswsc_status}
           isAdmin={isAdmin}
         />
+
+        <UploadedDocumentsPanel groups={documentGroups} />
 
         <OnboardingForm
           record={record}

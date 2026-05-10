@@ -18,20 +18,20 @@ export default async function StaffPortalPage({ params }: Props) {
   const supabase = createServiceClient();
 
   const record = await validateToken(token, {
-    lookupToken: (t) =>
+    lookupToken: (t: string) =>
       supabase
         .from("onboarding_tokens")
         .select("*")
-        .eq("token", t)
+        .eq("id", t)
         .maybeSingle()
-        .then((res) => ({ data: res.data, error: res.error })),
-    getRecord: (recordId) =>
+        .then((res) => ({ data: res.data as never, error: res.error })),
+    getRecord: (recordId: string) =>
       supabase
         .from("onboarding_records")
         .select("*")
         .eq("id", recordId)
         .maybeSingle()
-        .then((res) => ({ data: res.data, error: res.error })),
+        .then((res) => ({ data: res.data as never, error: res.error })),
   });
 
   if (!record) {
@@ -39,6 +39,14 @@ export default async function StaffPortalPage({ params }: Props) {
   }
 
   const items = getStaffFacingItems(record);
+
+  const { data: rawDocs } = await supabase
+    .from("onboarding_documents")
+    .select("*")
+    .eq("record_id", record.id)
+    .in("document_type", ["qualifications", "first_aid_cpr"]);
+  const docs = (rawDocs ?? []) as OnboardingDocument[];
+  const countByType = (type: string) => docs.filter((d) => d.document_type === type).length;
 
   const signedUrls = await Promise.all(
     REFERENCE_DOCS.map(async (doc) => {

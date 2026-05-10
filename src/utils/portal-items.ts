@@ -24,6 +24,8 @@ type StaffStatusKey = keyof Pick<
   | "ndiswsc_status"
   | "training_status"
   | "orientation_induction_status"
+  | "qualifications_status"
+  | "first_aid_cpr_status"
 >;
 
 const STAFF_ITEMS: { key: StaffStatusKey; label: string }[] = [
@@ -38,6 +40,8 @@ const STAFF_ITEMS: { key: StaffStatusKey; label: string }[] = [
   { key: "ndiswsc_status", label: "NDIS Worker Screening Check" },
   { key: "training_status", label: "Training" },
   { key: "orientation_induction_status", label: "Orientation & Induction" },
+  { key: "qualifications_status", label: "Qualifications" },
+  { key: "first_aid_cpr_status", label: "First Aid & CPR" },
 ];
 
 const UPLOAD_ITEMS: {
