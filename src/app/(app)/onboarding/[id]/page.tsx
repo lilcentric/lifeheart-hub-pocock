@@ -3,8 +3,10 @@ import { redirect, notFound } from "next/navigation";
 import OnboardingForm from "@/components/onboarding/OnboardingForm";
 import NdisWscPanel from "@/components/onboarding/NdisWscPanel";
 import OnboardingLinkPanel from "@/components/onboarding/OnboardingLinkPanel";
-import StaffDetailsPanel from "@/components/onboarding/StaffDetailsPanel";
-import type { OnboardingRecord, Profile, StaffDetail } from "@/lib/types";
+import ArchiveButton from "@/components/onboarding/ArchiveButton";
+import BundleBPanel from "@/components/onboarding/BundleBPanel";
+import { getActiveTemplates } from "@/lib/contract-templates";
+import type { OnboardingRecord, Profile, ContractTemplate } from "@/lib/types";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -55,24 +57,53 @@ export default async function EditOnboardingPage({ params }: Props) {
   const isAdmin = profile?.role === "admin";
   const isOfficer = profile?.role === "officer";
 
-  // Fetch submitted staff details (if any)
-  const { data: rawStaffDetail } = await supabase
-    .from("staff_details")
-    .select("*")
-    .eq("record_id", id)
-    .maybeSingle();
-  const staffDetail = rawStaffDetail as StaffDetail | null;
-
-  // Fetch the latest active (non-revoked) token for this record
+  // Fetch the latest active (non-revoked) token for this record (includes email for Bundle B)
   const { data: rawToken } = await supabase
     .from("onboarding_tokens")
-    .select("id")
+    .select("id, staff_email")
     .eq("record_id", id)
     .is("revoked_at", null)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  const activeToken = rawToken as { id: string } | null;
+  const activeToken = rawToken as { id: string; staff_email: string } | null;
+
+  const activeTemplates = isAdmin
+    ? await getActiveTemplates().catch(() => [] as ContractTemplate[])
+    : [];
+
+  const { data: rawDocs } = await supabase
+    .from("onboarding_documents")
+    .select("*")
+    .eq("record_id", id)
+    .in("document_type", ["qualifications", "first_aid_cpr"])
+    .order("created_at", { ascending: true });
+  const uploadedDocs = (rawDocs ?? []) as OnboardingDocument[];
+
+  const DOCUMENT_TYPES = [
+    { type: "qualifications", label: "Qualifications" },
+    { type: "first_aid_cpr", label: "First Aid & CPR" },
+  ] as const;
+
+  const documentGroups = await Promise.all(
+    DOCUMENT_TYPES.map(async ({ type, label }) => {
+      const docs = uploadedDocs.filter((d) => d.document_type === type);
+      const documents = await Promise.all(
+        docs.map(async (doc) => {
+          const { data } = await supabase.storage
+            .from("documents")
+            .createSignedUrl(doc.storage_path, 3600);
+          return {
+            filename: doc.filename,
+            storagePath: doc.storage_path,
+            signedUrl: data?.signedUrl ?? null,
+            uploadedAt: doc.created_at,
+          };
+        })
+      );
+      return { type, label, documents };
+    })
+  );
 
   return (
     <div className="p-6">
@@ -102,16 +133,24 @@ export default async function EditOnboardingPage({ params }: Props) {
           recordId={id}
           isAdmin={isAdmin}
           isOfficer={isOfficer}
-          activeToken={activeToken}
+          activeToken={activeToken ? { id: activeToken.id } : null}
         />
 
-        <StaffDetailsPanel detail={staffDetail} />
+        {isAdmin && activeToken && activeTemplates.length > 0 && (
+          <BundleBPanel
+            recordId={id}
+            staffEmail={activeToken.staff_email}
+            templates={activeTemplates}
+          />
+        )}
 
         <NdisWscPanel
           recordId={id}
           initialStatus={record.ndiswsc_status}
           isAdmin={isAdmin}
         />
+
+        <UploadedDocumentsPanel groups={documentGroups} />
 
         <OnboardingForm
           record={record}

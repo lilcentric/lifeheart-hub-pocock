@@ -93,6 +93,7 @@ type StatusField = keyof Pick<
   | "car_insurance_status"
   | "training_needs_status"
   | "uniforms_status"
+  | "tna_status"
 >;
 
 const ALL_STATUS_FIELDS: StatusField[] = [
@@ -116,6 +117,7 @@ const ALL_STATUS_FIELDS: StatusField[] = [
   "car_insurance_status",
   "training_needs_status",
   "uniforms_status",
+  "tna_status",
 ];
 
 export function deriveOverallStatus(
