@@ -2,8 +2,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { validateToken } from "@/lib/token-service";
 import { getStaffFacingItems } from "@/utils/portal-items";
 import StatusBadge from "@/components/onboarding/StatusBadge";
-import MultiFileUpload from "@/components/onboarding/MultiFileUpload";
-import type { OnboardingDocument } from "@/lib/types";
+import WwccPanel from "@/components/onboarding/WwccPanel";
 
 interface Props {
   params: Promise<{ token: string }>;
@@ -78,33 +77,20 @@ export default async function StaffPortalPage({ params }: Props) {
             Checklist
           </h2>
           <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white overflow-hidden">
-            {items.map((item) => {
-              const isUploadItem =
-                item.key === "qualifications_status" ||
-                item.key === "first_aid_cpr_status";
-              const docType = item.key === "qualifications_status"
-                ? "qualifications"
-                : "first_aid_cpr";
-
-              return (
-                <li key={item.key} className="px-4 py-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-800">{item.label}</span>
-                    <StatusBadge status={item.status} />
-                  </div>
-                  {isUploadItem && (
-                    <div className="mt-3">
-                      <MultiFileUpload
-                        token={token}
-                        documentType={docType}
-                        label={`Upload ${item.label} certificates`}
-                        initialCount={countByType(docType)}
-                      />
-                    </div>
-                  )}
-                </li>
-              );
-            })}
+            {items.map((item) => (
+              <li
+                key={item.key}
+                className="px-4 py-3"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-800">{item.label}</span>
+                  <StatusBadge status={item.status} />
+                </div>
+                {item.key === "wwcc_status" && (
+                  <WwccPanel recordId={record.id} currentStatus={item.status} />
+                )}
+              </li>
+            ))}
           </ul>
         </section>
 

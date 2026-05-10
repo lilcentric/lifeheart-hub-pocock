@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getStaffFacingItems } from "./portal-items";
+import { getStaffFacingItems, getUploadItems } from "./portal-items";
 import type { OnboardingRecord } from "@/lib/types";
 
 const baseRecord: OnboardingRecord = {
@@ -26,6 +26,9 @@ const baseRecord: OnboardingRecord = {
   conflict_of_interest_status: "completed",
   wwcc_status: "in_progress",
   ndiswsc_status: "pending_verification",
+  ndis_orientation_status: "not_completed",
+  qualifications_status: "not_completed",
+  first_aid_cpr_status: "not_completed",
   training_status: "not_completed",
   orientation_induction_status: "not_completed",
   ndis_orientation_status: "not_completed",
@@ -33,12 +36,9 @@ const baseRecord: OnboardingRecord = {
   first_aid_cpr_status: "not_completed",
   training_needs_status: "na",
   uniforms_status: "na",
-  identity_right_to_work_status: "not_completed",
-  wwcc_status: "not_completed",
-  ndis_orientation_status: "not_completed",
-  qualifications_status: "not_completed",
-  first_aid_cpr_status: "not_completed",
-  car_insurance_status: "not_completed",
+  identity_right_to_work_storage_path: null,
+  ndis_orientation_storage_path: null,
+  car_insurance_storage_path: null,
   created_at: "2026-01-01T00:00:00Z",
   updated_at: "2026-01-01T00:00:00Z",
 };
@@ -76,6 +76,10 @@ describe("getStaffFacingItems", () => {
       label: "Working With Children Check",
       status: "in_progress",
     });
+    expect(byKey["wwcc_status"]).toMatchObject({
+      label: "Working With Children Check",
+      status: "not_completed",
+    });
     expect(byKey["training_status"]).toMatchObject({
       label: "Training",
       status: "not_completed",
@@ -107,5 +111,51 @@ describe("getStaffFacingItems", () => {
     const item = items.find((i) => i.key === "first_aid_cpr_status");
 
     expect(item).toMatchObject({ label: "First Aid & CPR", status: "completed" });
+  });
+});
+
+describe("getUploadItems", () => {
+  it("returns the three single-file upload items", () => {
+    const items = getUploadItems(baseRecord);
+    const keys = items.map((i) => i.key);
+
+    expect(keys).toContain("identity_right_to_work_status");
+    expect(keys).toContain("ndis_orientation_status");
+    expect(keys).toContain("car_insurance_status");
+    expect(items).toHaveLength(3);
+  });
+
+  it("returns correct labels and document types", () => {
+    const items = getUploadItems(baseRecord);
+    const byKey = Object.fromEntries(items.map((i) => [i.key, i]));
+
+    expect(byKey["identity_right_to_work_status"]).toMatchObject({
+      label: "Identity & Right to Work",
+      documentType: "identity_right_to_work",
+      status: "not_completed",
+    });
+    expect(byKey["ndis_orientation_status"]).toMatchObject({
+      label: "NDIS Worker Orientation Module",
+      documentType: "ndis_orientation",
+      status: "not_completed",
+    });
+    expect(byKey["car_insurance_status"]).toMatchObject({
+      label: "Car Insurance",
+      documentType: "car_insurance",
+      status: "not_completed",
+    });
+  });
+
+  it("reflects the current status from the record", () => {
+    const items = getUploadItems({
+      ...baseRecord,
+      identity_right_to_work_status: "completed",
+      ndis_orientation_status: "in_progress",
+    });
+    const byKey = Object.fromEntries(items.map((i) => [i.key, i]));
+
+    expect(byKey["identity_right_to_work_status"].status).toBe("completed");
+    expect(byKey["ndis_orientation_status"].status).toBe("in_progress");
+    expect(byKey["car_insurance_status"].status).toBe("not_completed");
   });
 });

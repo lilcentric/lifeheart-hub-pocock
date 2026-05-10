@@ -67,9 +67,10 @@ export interface OnboardingRecord {
   contract_template_id: string | null;
   xero_employee_id: string | null;
 
-  created_at: string;
-  updated_at: string;
-}
+  // Phase 2 storage paths (single-file uploads)
+  identity_right_to_work_storage_path: string | null;
+  ndis_orientation_storage_path: string | null;
+  car_insurance_storage_path: string | null;
 
 export interface OnboardingToken {
   id: string;
@@ -77,6 +78,7 @@ export interface OnboardingToken {
   staff_email: string;
   revoked_at: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export type OnboardingRecordWithOfficer = OnboardingRecord & {
