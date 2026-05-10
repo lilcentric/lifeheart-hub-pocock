@@ -5,6 +5,23 @@ const TEMPLATE_ID = "dc0397cc150f43b5965e5602fd2dadd5";
 const ROLE_ID = "78de86cc17824615818c1e6ebb790160";
 const ACCOUNT_ID = "f0f2835d888140289720bf3180709296";
 
+const TNA_TEMPLATE_ID = "aa1122bb3344cc5566dd7788ee9900ff";
+const TNA_STAFF_ROLE_ID = "staff-role-aabbccdd";
+const TNA_ADMIN_ROLE_ID = "admin-role-eeff0011";
+
+function makeTNADeps(fetchImpl: typeof fetch) {
+  return {
+    fetch: fetchImpl,
+    annatureId: "test-public-key",
+    annatureKey: "test-private-key",
+    accountId: ACCOUNT_ID,
+    templateId: TNA_TEMPLATE_ID,
+    staffRoleId: TNA_STAFF_ROLE_ID,
+    adminRoleId: TNA_ADMIN_ROLE_ID,
+    persistEnvelopeId: vi.fn().mockResolvedValue({ error: null }),
+  };
+}
+
 function makeDeps(fetchImpl: typeof fetch) {
   return {
     fetch: fetchImpl,

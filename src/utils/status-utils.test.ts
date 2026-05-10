@@ -37,7 +37,7 @@ describe("deriveOverallStatus", () => {
     orientation_induction_status: "completed",
     training_needs_status: "completed",
     uniforms_status: "completed",
-    // new Phase 2 fields
+    // Phase 2 fields
     identity_right_to_work_status: "completed",
     wwcc_status: "completed",
     ndiswsc_status: "completed",
@@ -45,6 +45,8 @@ describe("deriveOverallStatus", () => {
     qualifications_status: "completed",
     first_aid_cpr_status: "completed",
     car_insurance_status: "completed",
+    // TNA
+    tna_status: "completed",
   } as const;
 
   it("returns Completed when all new fields are completed", () => {
