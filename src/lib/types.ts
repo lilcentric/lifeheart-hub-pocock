@@ -40,7 +40,7 @@ export interface OnboardingRecord {
   employee_details_form_status: OnboardingStatus;
   conflict_of_interest_status: OnboardingStatus;
 
-  // Compliance & Identity (Phase 2)
+  // Compliance
   ndiswsc_status: OnboardingStatus;
   identity_right_to_work_status: OnboardingStatus;
   wwcc_status: OnboardingStatus;
@@ -84,15 +84,6 @@ export type OnboardingRecordWithOfficer = OnboardingRecord & {
 };
 
 export interface OnboardingDocument {
-  id: string;
-  record_id: string;
-  document_type: string;
-  storage_path: string;
-  filename: string | null;
-  created_at: string;
-}
-
-export interface ContractTemplate {
   id: string;
   name: string;
   employment_type: string;
@@ -138,14 +129,8 @@ export interface Database {
       };
       onboarding_tokens: {
         Row: OnboardingToken;
-        Insert: Omit<OnboardingToken, "id" | "created_at"> & { id?: string };
+        Insert: Omit<OnboardingToken, "created_at">;
         Update: Partial<Omit<OnboardingToken, "id" | "created_at">>;
-        Relationships: [];
-      };
-      onboarding_documents: {
-        Row: OnboardingDocument;
-        Insert: Omit<OnboardingDocument, "id" | "created_at"> & { id?: string };
-        Update: Partial<Omit<OnboardingDocument, "id" | "created_at">>;
         Relationships: [];
       };
     };
