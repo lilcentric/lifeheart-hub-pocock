@@ -19,13 +19,6 @@ export const EmailService = {
         <p>Hi ${staffName},</p>
         <p>Please use the link below to complete your onboarding:</p>
         <p><a href="${onboardingUrl}">${onboardingUrl}</a></p>
-        <hr />
-        <p><strong>Reference documents:</strong></p>
-        <ul>
-          <li><a href="#">Staff Handbook</a></li>
-          <li><a href="#">SIL Voyager Staff Manual</a></li>
-        </ul>
-        <p>A Xero setup email will arrive within the hour.</p>
         <p>Lifeheart Support Team</p>
       `,
     });
