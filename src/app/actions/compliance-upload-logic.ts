@@ -3,12 +3,14 @@ import type { OnboardingStatus } from "@/lib/types";
 export type ComplianceDocumentType =
   | "identity_right_to_work"
   | "ndis_orientation"
-  | "car_insurance";
+  | "car_insurance"
+  | "additional_training";
 
 const DOCUMENT_STATUS_FIELDS: Record<ComplianceDocumentType, string> = {
   identity_right_to_work: "identity_right_to_work_status",
   ndis_orientation: "ndis_orientation_status",
   car_insurance: "car_insurance_status",
+  additional_training: "additional_training_status",
 };
 
 const VALID_TYPES = new Set<string>(Object.keys(DOCUMENT_STATUS_FIELDS));

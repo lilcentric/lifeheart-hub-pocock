@@ -1,28 +1,31 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { getWwccUploadUrl, markWwccUploaded } from "@/app/actions/wwcc";
+import { getComplianceUploadUrl, recordComplianceUpload } from "@/app/actions/compliance-upload";
+import type { ComplianceDocumentType } from "@/app/actions/compliance-upload-logic";
 import type { OnboardingStatus } from "@/lib/types";
 
 interface Props {
   recordId: string;
+  documentType: ComplianceDocumentType;
   currentStatus: OnboardingStatus;
-  howToGetItUrl: string;
+  uploadLabel?: string;
 }
 
-export default function WwccPanel({ recordId, currentStatus, howToGetItUrl }: Props) {
+export default function ComplianceUploadPanel({
+  recordId,
+  documentType,
+  currentStatus,
+  uploadLabel = "Click to upload file (PDF, JPG, PNG)",
+}: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(
-    currentStatus === "in_progress" || currentStatus === "completed"
-  );
+  const [done, setDone] = useState(currentStatus === "completed");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (done) {
     return (
-      <p className="text-sm text-green-700 mt-2">
-        Your WWCC has been uploaded. An admin will confirm once verified.
-      </p>
+      <p className="text-sm text-green-700 mt-2">Document uploaded successfully.</p>
     );
   }
 
@@ -30,7 +33,7 @@ export default function WwccPanel({ recordId, currentStatus, howToGetItUrl }: Pr
     setUploading(true);
     setError(null);
 
-    const urlResult = await getWwccUploadUrl(recordId, file.name);
+    const urlResult = await getComplianceUploadUrl(recordId, documentType, file.name);
     if ("error" in urlResult) {
       setError(urlResult.error);
       setUploading(false);
@@ -50,7 +53,7 @@ export default function WwccPanel({ recordId, currentStatus, howToGetItUrl }: Pr
       return;
     }
 
-    const recordResult = await markWwccUploaded(recordId, path);
+    const recordResult = await recordComplianceUpload(recordId, documentType, path);
     if ("error" in recordResult) {
       setError(recordResult.error);
       setUploading(false);
@@ -62,7 +65,7 @@ export default function WwccPanel({ recordId, currentStatus, howToGetItUrl }: Pr
   }
 
   return (
-    <div className="mt-3 space-y-3">
+    <div className="mt-3 space-y-2">
       <input
         ref={fileInputRef}
         type="file"
@@ -79,19 +82,8 @@ export default function WwccPanel({ recordId, currentStatus, howToGetItUrl }: Pr
         onClick={() => fileInputRef.current?.click()}
         className="w-full rounded-md border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500 hover:border-gray-400 hover:bg-gray-100 transition-colors disabled:opacity-50"
       >
-        {uploading ? "Uploading…" : "Click to upload WWCC (PDF, JPG, PNG)"}
+        {uploading ? "Uploading…" : uploadLabel}
       </button>
-      <p className="text-sm text-gray-500">
-        Don&apos;t have one?{" "}
-        <a
-          href={howToGetItUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 underline hover:text-blue-700"
-        >
-          Here&apos;s how to get it →
-        </a>
-      </p>
       {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
     </div>
   );

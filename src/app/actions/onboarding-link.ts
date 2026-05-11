@@ -5,8 +5,9 @@ import { revalidatePath } from "next/cache";
 import type { Profile } from "@/lib/types";
 import { TokenService } from "@/lib/token-service";
 import { EmailService } from "@/lib/email-service";
+import { executeSendAllDocuments } from "@/lib/services/annature-logic";
 
-type ActionResult = { success: true } | { error: string };
+type ActionResult = { success: true; annatureWarning?: string } | { error: string };
 
 async function getAuthorisedRole(
   minRole: "officer" | "admin"
@@ -42,12 +43,23 @@ async function getStaffName(recordId: string): Promise<string> {
   return (data as { staff_name: string } | null)?.staff_name ?? "Staff Member";
 }
 
+function requireEnv(name: string): string {
+  const val = process.env[name];
+  if (!val) throw new Error(`Missing env var: ${name}`);
+  return val;
+}
+
 export async function sendOnboardingLink(
   recordId: string,
-  email: string
+  email: string,
+  pdCocTemplateId: string,
+  contractTemplateId: string,
+  flexibleWorkingOptedIn: boolean
 ): Promise<ActionResult> {
   const auth = await getAuthorisedRole("officer");
   if ("error" in auth) return auth;
+
+  const supabase = await createClient();
 
   let token: string;
   try {
@@ -64,8 +76,72 @@ export async function sendOnboardingLink(
     return { error: `Token generated but email failed: ${(e as Error).message}` };
   }
 
+  // Send all signing documents via Annature. Failure is a warning — token and
+  // email are already dispatched and staff can still access their portal.
+  let annatureWarning: string | undefined;
+  try {
+    const annatureResult = await executeSendAllDocuments(
+      recordId,
+      email,
+      pdCocTemplateId,
+      contractTemplateId,
+      flexibleWorkingOptedIn,
+      {
+        fetch: globalThis.fetch,
+        annatureId: requireEnv("ANNATURE_ID"),
+        annatureKey: requireEnv("ANNATURE_KEY"),
+        accountId: requireEnv("ANNATURE_ACCOUNT_ID"),
+        roleId: requireEnv("ANNATURE_ROLE_ID"),
+        conflictOfInterestTemplateId: requireEnv("ANNATURE_CONFLICT_OF_INTEREST_TEMPLATE_ID"),
+        corePolicyTemplateId: requireEnv("ANNATURE_CORE_POLICY_TEMPLATE_ID"),
+        highIntensityTemplateId: requireEnv("ANNATURE_HIGH_INTENSITY_TEMPLATE_ID"),
+        behaviourSupportTemplateId: requireEnv("ANNATURE_BEHAVIOUR_SUPPORT_TEMPLATE_ID"),
+        flexibleWorkingTemplateId: requireEnv("ANNATURE_FLEXIBLE_WORKING_TEMPLATE_ID"),
+        getPdCocAnnatureTemplateId: async (id) => {
+          const { data } = await supabase
+            .from("pd_coc_templates")
+            .select("template_id")
+            .eq("id", id)
+            .single();
+          return (data as { template_id: string } | null)?.template_id ?? null;
+        },
+        getContractAnnatureTemplateId: async (id) => {
+          const { data } = await supabase
+            .from("contract_templates")
+            .select("template_id")
+            .eq("id", id)
+            .single();
+          return (data as { template_id: string } | null)?.template_id ?? null;
+        },
+        persistEnvelopeData: async (
+          recId,
+          envelopeId,
+          signingUrl,
+          pdCocTmplId,
+          fwOptedIn
+        ) => {
+          const { error } = await supabase
+            .from("onboarding_records")
+            .update({
+              bundle_a_envelope_id: envelopeId,
+              signing_url: signingUrl,
+              pd_coc_template_id: pdCocTmplId,
+              flexible_working_opted_in: fwOptedIn,
+            })
+            .eq("id", recId);
+          return { error: error?.message ?? null };
+        },
+      }
+    );
+    if ("error" in annatureResult) {
+      annatureWarning = annatureResult.error;
+    }
+  } catch (e) {
+    annatureWarning = (e as Error).message;
+  }
+
   revalidatePath(`/onboarding/${recordId}`);
-  return { success: true };
+  return annatureWarning ? { success: true, annatureWarning } : { success: true };
 }
 
 export async function revokeToken(

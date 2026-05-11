@@ -30,17 +30,20 @@ export type WebhookResult =
   | { status: 200 }
   | { status: 400; error: string };
 
-const BUNDLE_A_FIELDS: Record<string, string> = {
+// Combined envelope — set when all onboarding docs are signed at once.
+// bundle_a_envelope_id stores the combined envelope ID (reused column name).
+const COMBINED_ENVELOPE_FIELDS: Record<string, string> = {
   position_description_status: "completed",
   code_of_conduct_status: "completed",
+  employment_contract_status: "completed",
+  policies_status: "completed",
+  conflict_of_interest_status: "completed",
 };
 
+// Legacy: Bundle B is no longer sent for new records but the webhook handler
+// remains to avoid errors for any in-flight envelopes created before the overhaul.
 const BUNDLE_B_FIELDS: Record<string, string> = {
   employment_contract_status: "completed",
-  flexible_working_status: "completed",
-  core_policy_status: "completed",
-  high_intensity_policy_status: "completed",
-  implementing_behaviour_support_status: "completed",
 };
 
 export async function executeAnnatureWebhook(
@@ -63,7 +66,7 @@ export async function executeAnnatureWebhook(
   const { recordId, envelopeType } = found;
 
   if (envelopeType === "bundle_a") {
-    await updateRecordFields(recordId, BUNDLE_A_FIELDS);
+    await updateRecordFields(recordId, COMBINED_ENVELOPE_FIELDS);
     await fetchAndStorePdf(recordId, envelope_id, "bundle_a");
   } else if (envelopeType === "bundle_b") {
     await updateRecordFields(recordId, BUNDLE_B_FIELDS);

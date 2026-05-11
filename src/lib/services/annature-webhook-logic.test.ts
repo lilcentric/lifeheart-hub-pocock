@@ -60,11 +60,11 @@ describe("executeAnnatureWebhook — HMAC validation", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Bundle A
+// Combined envelope (stored as bundle_a_envelope_id)
 // ---------------------------------------------------------------------------
 
-describe("executeAnnatureWebhook — Bundle A", () => {
-  it("updates position_description_status and code_of_conduct_status to completed", async () => {
+describe("executeAnnatureWebhook — combined envelope (bundle_a)", () => {
+  it("updates all 5 signing statuses to completed", async () => {
     const deps = makeDeps({
       findRecordByEnvelopeId: vi.fn().mockResolvedValue({
         recordId: "LF-HDC-00001",
@@ -73,7 +73,7 @@ describe("executeAnnatureWebhook — Bundle A", () => {
     });
 
     const result = await executeAnnatureWebhook(
-      makePayload("env-bundle-a"),
+      makePayload("env-combined"),
       "valid-sig",
       deps
     );
@@ -82,10 +82,13 @@ describe("executeAnnatureWebhook — Bundle A", () => {
     expect(deps.updateRecordFields).toHaveBeenCalledWith("LF-HDC-00001", {
       position_description_status: "completed",
       code_of_conduct_status: "completed",
+      employment_contract_status: "completed",
+      policies_status: "completed",
+      conflict_of_interest_status: "completed",
     });
   });
 
-  it("fetches and stores the signed PDF for Bundle A", async () => {
+  it("fetches and stores the signed PDF", async () => {
     const deps = makeDeps({
       findRecordByEnvelopeId: vi.fn().mockResolvedValue({
         recordId: "LF-HDC-00001",
@@ -93,22 +96,22 @@ describe("executeAnnatureWebhook — Bundle A", () => {
       }),
     });
 
-    await executeAnnatureWebhook(makePayload("env-bundle-a"), "valid-sig", deps);
+    await executeAnnatureWebhook(makePayload("env-combined"), "valid-sig", deps);
 
     expect(deps.fetchAndStorePdf).toHaveBeenCalledWith(
       "LF-HDC-00001",
-      "env-bundle-a",
+      "env-combined",
       "bundle_a"
     );
   });
 });
 
 // ---------------------------------------------------------------------------
-// Bundle B
+// Bundle B (legacy path — no longer sent for new records)
 // ---------------------------------------------------------------------------
 
-describe("executeAnnatureWebhook — Bundle B", () => {
-  it("updates all five Bundle B status fields to completed", async () => {
+describe("executeAnnatureWebhook — Bundle B (legacy)", () => {
+  it("updates employment_contract_status to completed for in-flight legacy envelopes", async () => {
     const deps = makeDeps({
       findRecordByEnvelopeId: vi.fn().mockResolvedValue({
         recordId: "LF-HDC-00002",
@@ -125,10 +128,6 @@ describe("executeAnnatureWebhook — Bundle B", () => {
     expect(result).toEqual({ status: 200 });
     expect(deps.updateRecordFields).toHaveBeenCalledWith("LF-HDC-00002", {
       employment_contract_status: "completed",
-      flexible_working_status: "completed",
-      core_policy_status: "completed",
-      high_intensity_policy_status: "completed",
-      implementing_behaviour_support_status: "completed",
     });
   });
 });
