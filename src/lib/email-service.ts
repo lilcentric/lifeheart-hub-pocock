@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const FROM = "Lifeheart Hub <noreply@lifeheart.com.au>";
+const FROM = "Lifeheart Hub <noreply@noreply.lifeheart.com.au>";
 
 export const EmailService = {
   async sendOnboardingLink(to: string, staffName: string, token: string): Promise<void> {
