@@ -14,7 +14,7 @@ export async function executeSendOnboardingLink(
   deps: SendOnboardingLinkDeps
 ): Promise<SendOnboardingLinkResult> {
   const tokenResult = await deps.generateToken(recordId);
-  if (tokenResult.error) return { error: tokenResult.error };
+  if (tokenResult.token === null) return { error: tokenResult.error };
 
   const emailResult = await deps.sendEmail(staffEmail, tokenResult.token);
   if (emailResult.error) return { error: emailResult.error };
