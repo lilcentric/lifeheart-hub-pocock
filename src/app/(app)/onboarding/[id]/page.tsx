@@ -6,7 +6,8 @@ import OnboardingLinkPanel from "@/components/onboarding/OnboardingLinkPanel";
 import ArchiveButton from "@/components/onboarding/ArchiveButton";
 import BundleBPanel from "@/components/onboarding/BundleBPanel";
 import { getActiveTemplates } from "@/lib/contract-templates";
-import type { OnboardingRecord, Profile, ContractTemplate } from "@/lib/types";
+import type { OnboardingRecord, Profile, ContractTemplate, OnboardingDocument } from "@/lib/types";
+import UploadedDocumentsPanel from "@/components/onboarding/UploadedDocumentsPanel";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -71,6 +72,14 @@ export default async function EditOnboardingPage({ params }: Props) {
   const activeTemplates = isAdmin
     ? await getActiveTemplates().catch(() => [] as ContractTemplate[])
     : [];
+
+  let ndiswscDownloadUrl: string | null = null;
+  if (record.ndiswsc_storage_path) {
+    const { data } = await supabase.storage
+      .from("onboarding-docs")
+      .createSignedUrl(record.ndiswsc_storage_path, 3600);
+    ndiswscDownloadUrl = data?.signedUrl ?? null;
+  }
 
   const { data: rawDocs } = await supabase
     .from("onboarding_documents")

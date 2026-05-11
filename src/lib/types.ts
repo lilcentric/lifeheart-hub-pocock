@@ -11,13 +11,13 @@ export type OnboardingStatus =
 
 export type UserRole = "admin" | "officer" | "viewer";
 
-export interface Profile {
+export type Profile = {
   id: string;
   full_name: string;
   role: UserRole;
-}
+};
 
-export interface ContractTemplate {
+export type ContractTemplate = {
   id: string;
   name: string;
   employment_type: EmploymentType;
@@ -25,11 +25,11 @@ export interface ContractTemplate {
   annature_template_id: string;
   archived: boolean;
   created_at: string;
-}
+};
 
 export type NewContractTemplate = Omit<ContractTemplate, "id" | "archived" | "created_at">;
 
-export interface OnboardingRecord {
+export type OnboardingRecord = {
   id: string;
   created_by: string | null;
   staff_name: string;
@@ -83,31 +83,48 @@ export interface OnboardingRecord {
   identity_right_to_work_storage_path: string | null;
   ndis_orientation_storage_path: string | null;
   car_insurance_storage_path: string | null;
+  wwcc_storage_path: string | null;
+  ndiswsc_storage_path: string | null;
 
-export interface OnboardingToken {
+  // Phase 2 Annature envelope IDs
+  bundle_a_envelope_id: string | null;
+  tna_envelope_id: string | null;
+  bundle_b_envelope_id: string | null;
+
+  // Phase 2: TNA status
+  tna_status: OnboardingStatus;
+
+  // Original compliance field (migration)
+  screening_checks_status: OnboardingStatus;
+
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+};
+
+export type OnboardingToken = {
   id: string;
   record_id: string;
   staff_email: string;
   revoked_at: string | null;
   created_at: string;
   updated_at: string;
-}
+};
 
 export type OnboardingRecordWithOfficer = OnboardingRecord & {
   officer_profile: Pick<Profile, "id" | "full_name"> | null;
 };
 
-export interface OnboardingDocument {
+export type OnboardingDocument = {
   id: string;
-  name: string;
-  employment_type: string;
-  version: string;
-  annature_template_id: string;
-  archived: boolean;
+  record_id: string;
+  document_type: string;
+  filename: string | null;
+  storage_path: string;
   created_at: string;
-}
+};
 
-export interface StaffDetail {
+export type StaffDetail = {
   id: string;
   record_id: string;
   first_name: string;
@@ -123,7 +140,7 @@ export interface StaffDetail {
   visa_expiry_date: string | null;
   created_at: string;
   updated_at: string;
-}
+};
 
 // Supabase Database type (minimal — replace with codegen output once project is linked)
 export interface Database {
@@ -151,18 +168,24 @@ export interface Database {
         Update: Partial<Omit<OnboardingToken, "id" | "created_at">>;
         Relationships: [];
       };
+      staff_details: {
+        Row: StaffDetail;
+        Insert: Omit<StaffDetail, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<StaffDetail, "id" | "created_at" | "updated_at">>;
+        Relationships: [];
+      };
+      onboarding_documents: {
+        Row: OnboardingDocument;
+        Insert: Omit<OnboardingDocument, "id" | "created_at">;
+        Update: Partial<Omit<OnboardingDocument, "id" | "created_at">>;
+        Relationships: [];
+      };
     };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      [_ in never]: never;
-    };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
     Enums: {
       onboarding_status: OnboardingStatus;
     };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
+    CompositeTypes: Record<string, never>;
   };
 }

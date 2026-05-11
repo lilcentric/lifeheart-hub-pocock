@@ -13,7 +13,7 @@ create table profiles (
 create function handle_new_user()
 returns trigger as $$
 begin
-  insert into profiles (id, full_name, role)
+  insert into public.profiles (id, full_name, role)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', ''),
@@ -21,7 +21,7 @@ begin
   );
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
 create trigger on_auth_user_created
   after insert on auth.users

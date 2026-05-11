@@ -3,6 +3,7 @@ import { validateToken } from "@/lib/token-service";
 import { getStaffFacingItems } from "@/utils/portal-items";
 import StatusBadge from "@/components/onboarding/StatusBadge";
 import WwccPanel from "@/components/onboarding/WwccPanel";
+import type { OnboardingDocument } from "@/lib/types";
 
 interface Props {
   params: Promise<{ token: string }>;
