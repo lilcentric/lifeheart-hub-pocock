@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { executeSendBundleB } from "@/lib/services/annature-logic";
+import { validateAnnatureEnv } from "@/lib/services/annature-env";
 import { executeSendContractBundle } from "./bundle-b-logic";
 import type { SendContractBundleResult } from "./bundle-b-logic";
 
@@ -22,27 +23,11 @@ export async function sendContractBundle(
     },
 
     async sendBundleB(rId, tmplId, email) {
-      const annatureId = process.env.ANNATURE_ID;
-      const annatureKey = process.env.ANNATURE_KEY;
-      const accountId = process.env.ANNATURE_ACCOUNT_ID;
-      const roleId = process.env.ANNATURE_BUNDLE_B_ROLE_ID;
-      const flexibleWorkingTemplateId = process.env.ANNATURE_BUNDLE_B_FLEXIBLE_WORKING_TEMPLATE_ID;
-      const corePolicyTemplateId = process.env.ANNATURE_BUNDLE_B_CORE_POLICY_TEMPLATE_ID;
-      const highIntensityTemplateId = process.env.ANNATURE_BUNDLE_B_HIGH_INTENSITY_TEMPLATE_ID;
-      const behaviourSupportTemplateId = process.env.ANNATURE_BUNDLE_B_BEHAVIOUR_SUPPORT_TEMPLATE_ID;
-
-      if (
-        !annatureId ||
-        !annatureKey ||
-        !accountId ||
-        !roleId ||
-        !flexibleWorkingTemplateId ||
-        !corePolicyTemplateId ||
-        !highIntensityTemplateId ||
-        !behaviourSupportTemplateId
-      ) {
-        return { error: "Annature Bundle B environment variables not configured" };
+      const envResult = validateAnnatureEnv(process.env);
+      if (!envResult.ok) {
+        return { error: `Annature env vars not configured: ${envResult.missing.join(", ")}` };
       }
+      const { annatureId, annatureKey, accountId, roleId, flexibleWorkingTemplateId, corePolicyTemplateId, highIntensityTemplateId, behaviourSupportTemplateId } = envResult.env;
 
       return executeSendBundleB(rId, tmplId, email, {
         fetch: globalThis.fetch,
