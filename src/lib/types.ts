@@ -29,6 +29,16 @@ export type ContractTemplate = {
 
 export type NewContractTemplate = Omit<ContractTemplate, "id" | "archived" | "created_at">;
 
+export type PdCocTemplate = {
+  id: string;
+  name: string;
+  employment_type: EmploymentType;
+  version: string;
+  template_id: string;
+  archived: boolean;
+  created_at: string;
+};
+
 export type OnboardingRecord = {
   id: string;
   created_by: string | null;
@@ -96,6 +106,14 @@ export type OnboardingRecord = {
 
   // Original compliance field (migration)
   screening_checks_status: OnboardingStatus;
+
+  // Phase 3: Onboarding overhaul
+  pd_coc_template_id: string | null;
+  flexible_working_opted_in: boolean | null;
+  signing_url: string | null;
+  policies_status: OnboardingStatus;
+  additional_training_status: OnboardingStatus;
+  additional_training_storage_path: string | null;
 
   // Timestamps
   created_at: string;
@@ -178,6 +196,12 @@ export interface Database {
         Row: OnboardingDocument;
         Insert: Omit<OnboardingDocument, "id" | "created_at">;
         Update: Partial<Omit<OnboardingDocument, "id" | "created_at">>;
+        Relationships: [];
+      };
+      pd_coc_templates: {
+        Row: PdCocTemplate;
+        Insert: Omit<PdCocTemplate, "id" | "archived" | "created_at">;
+        Update: Partial<Omit<PdCocTemplate, "id" | "created_at">>;
         Relationships: [];
       };
     };

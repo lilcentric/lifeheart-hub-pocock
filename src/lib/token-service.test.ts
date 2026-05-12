@@ -60,6 +60,12 @@ const RECORD: OnboardingRecord = {
   bundle_a_envelope_id: null,
   tna_envelope_id: null,
   bundle_b_envelope_id: null,
+  pd_coc_template_id: null,
+  flexible_working_opted_in: null,
+  signing_url: null,
+  policies_status: "not_completed",
+  additional_training_status: "not_completed",
+  additional_training_storage_path: null,
   created_at: "2025-01-01T00:00:00Z",
   updated_at: "2025-01-01T00:00:00Z",
 };
