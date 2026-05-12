@@ -1,9 +1,13 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { validateToken } from "@/lib/token-service";
-import { getStaffFacingItems } from "@/utils/portal-items";
+import { getPortalItems } from "@/utils/portal-items";
+import type { AnyPortalItem, SignPortalItem, UploadPortalItem, MultiUploadPortalItem } from "@/utils/portal-items";
 import StatusBadge from "@/components/onboarding/StatusBadge";
 import WwccPanel from "@/components/onboarding/WwccPanel";
-import type { OnboardingDocument } from "@/lib/types";
+import NdisWscUploadPanel from "@/components/onboarding/NdisWscUploadPanel";
+import ComplianceUploadPanel from "@/components/onboarding/ComplianceUploadPanel";
+import MultiFileUpload from "@/components/onboarding/MultiFileUpload";
+import Link from "next/link";
 
 interface Props {
   params: Promise<{ token: string }>;
@@ -39,15 +43,7 @@ export default async function StaffPortalPage({ params }: Props) {
     return <TokenErrorPage />;
   }
 
-  const items = getStaffFacingItems(record);
-
-  const { data: rawDocs } = await supabase
-    .from("onboarding_documents")
-    .select("*")
-    .eq("record_id", record.id)
-    .in("document_type", ["qualifications", "first_aid_cpr"]);
-  const docs = (rawDocs ?? []) as OnboardingDocument[];
-  const countByType = (type: string) => docs.filter((d) => d.document_type === type).length;
+  const items = getPortalItems(record, token);
 
   const signedUrls = await Promise.all(
     REFERENCE_DOCS.map(async (doc) => {
@@ -79,17 +75,15 @@ export default async function StaffPortalPage({ params }: Props) {
           </h2>
           <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white overflow-hidden">
             {items.map((item) => (
-              <li
-                key={item.key}
-                className="px-4 py-3"
-              >
-                <div className="flex items-center justify-between">
+              <li key={item.key} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
                   <span className="text-sm text-gray-800">{item.label}</span>
-                  <StatusBadge status={item.status} />
+                  <div className="flex items-center gap-3 shrink-0">
+                    {renderItemAction(item)}
+                    <StatusBadge status={item.status} />
+                  </div>
                 </div>
-                {item.key === "wwcc_status" && (
-                  <WwccPanel recordId={record.id} currentStatus={item.status} />
-                )}
+                {renderItemPanel(item, record.id, token)}
               </li>
             ))}
           </ul>
@@ -127,6 +121,95 @@ export default async function StaffPortalPage({ params }: Props) {
       </div>
     </main>
   );
+}
+
+function renderItemAction(item: AnyPortalItem) {
+  if (item.kind === "form") {
+    if (item.status === "completed") return null;
+    return (
+      <Link
+        href={item.href}
+        className="text-sm text-blue-600 font-medium hover:text-blue-700 whitespace-nowrap"
+      >
+        Fill in →
+      </Link>
+    );
+  }
+
+  if (item.kind === "sign") {
+    const signItem = item as SignPortalItem;
+    if (signItem.status === "completed") return null;
+    if (!signItem.signingUrl) {
+      return (
+        <span className="text-xs text-gray-400 italic">Awaiting link</span>
+      );
+    }
+    return (
+      <a
+        href={signItem.signingUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm text-blue-600 font-medium hover:text-blue-700 whitespace-nowrap"
+      >
+        Sign Document →
+      </a>
+    );
+  }
+
+  return null;
+}
+
+function renderItemPanel(item: AnyPortalItem, recordId: string, token: string) {
+  if (item.status === "completed") return null;
+
+  if (item.kind === "upload") {
+    const uploadItem = item as UploadPortalItem;
+
+    if (uploadItem.uploadVariant === "wwcc") {
+      return (
+        <WwccPanel
+          recordId={recordId}
+          currentStatus={uploadItem.status}
+          howToGetItUrl={uploadItem.howToGetItUrl!}
+        />
+      );
+    }
+
+    if (uploadItem.uploadVariant === "ndiswsc") {
+      return (
+        <NdisWscUploadPanel
+          recordId={recordId}
+          currentStatus={uploadItem.status}
+          howToGetItUrl={uploadItem.howToGetItUrl!}
+        />
+      );
+    }
+
+    if (uploadItem.documentType) {
+      return (
+        <ComplianceUploadPanel
+          recordId={recordId}
+          documentType={uploadItem.documentType}
+          currentStatus={uploadItem.status}
+        />
+      );
+    }
+  }
+
+  if (item.kind === "multi-upload") {
+    const multiItem = item as MultiUploadPortalItem;
+    return (
+      <div className="mt-3">
+        <MultiFileUpload
+          token={token}
+          documentType={multiItem.documentType}
+          label={multiItem.label}
+        />
+      </div>
+    );
+  }
+
+  return null;
 }
 
 function TokenErrorPage() {

@@ -77,6 +77,27 @@ describe("executeComplianceUpload", () => {
     );
   });
 
+  it("records path and sets additional_training_status to completed", async () => {
+    const result = await executeComplianceUpload(
+      "LF-HDC-00004",
+      "additional_training",
+      "onboarding/LF-HDC-00004/additional_training/cert.pdf",
+      deps
+    );
+
+    expect(result).toEqual({ success: true });
+    expect(mockRecordPath).toHaveBeenCalledWith(
+      "LF-HDC-00004",
+      "additional_training",
+      "onboarding/LF-HDC-00004/additional_training/cert.pdf"
+    );
+    expect(mockUpdateStatus).toHaveBeenCalledWith(
+      "LF-HDC-00004",
+      "additional_training_status",
+      "completed"
+    );
+  });
+
   it("rejects an unknown document type and does not call recordPath or updateStatus", async () => {
     const result = await executeComplianceUpload(
       "LF-HDC-00001",

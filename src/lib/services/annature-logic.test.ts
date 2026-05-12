@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { executeSendBundleA, executeSendBundleB } from "./annature-logic";
+import { executeSendBundleA, executeSendBundleB, executeSendAllDocuments } from "./annature-logic";
 
 const TEMPLATE_ID = "dc0397cc150f43b5965e5602fd2dadd5";
 const ROLE_ID = "78de86cc17824615818c1e6ebb790160";
@@ -190,5 +190,171 @@ describe("executeSendBundleB", () => {
 
     expect(mockPersist).toHaveBeenCalledWith("LF-HDC-00010", "env-b-xyz");
     expect(result).toEqual({ envelopeId: "env-b-xyz" });
+  });
+});
+
+// ── executeSendAllDocuments ───────────────────────────────────────────────────
+
+const ALL_ROLE_ID = "role-all-docs";
+const CONFLICT_TMPL = "tmpl-coi-001";
+const CORE_POLICY_TMPL = "tmpl-cp-001";
+const HIGH_INTENSITY_TMPL = "tmpl-hi-001";
+const BEHAVIOUR_SUPPORT_TMPL = "tmpl-bs-001";
+const FLEXIBLE_WORKING_TMPL = "tmpl-fw-001";
+
+function makeAllDocsDeps(
+  fetchImpl: typeof fetch,
+  pdCocAnnId: string | null = "ann-pdcoc-001",
+  contractAnnId: string | null = "ann-contract-001"
+) {
+  return {
+    fetch: fetchImpl,
+    annatureId: "test-public-key",
+    annatureKey: "test-private-key",
+    accountId: ACCOUNT_ID,
+    roleId: ALL_ROLE_ID,
+    conflictOfInterestTemplateId: CONFLICT_TMPL,
+    corePolicyTemplateId: CORE_POLICY_TMPL,
+    highIntensityTemplateId: HIGH_INTENSITY_TMPL,
+    behaviourSupportTemplateId: BEHAVIOUR_SUPPORT_TMPL,
+    flexibleWorkingTemplateId: FLEXIBLE_WORKING_TMPL,
+    getPdCocAnnatureTemplateId: vi.fn().mockResolvedValue(pdCocAnnId),
+    getContractAnnatureTemplateId: vi.fn().mockResolvedValue(contractAnnId),
+    persistEnvelopeData: vi.fn().mockResolvedValue({ error: null }),
+  };
+}
+
+function makeSuccessFetch(envelopeId = "env-all-001", signingLink = "https://sign.annature.com.au/abc") {
+  return vi.fn()
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: envelopeId }),
+    })
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ signers: [{ signing_link: signingLink }] }),
+    });
+}
+
+describe("executeSendAllDocuments", () => {
+  it("returns error when PD & CoC template is not found", async () => {
+    const mockFetch = vi.fn();
+    const deps = makeAllDocsDeps(mockFetch, null);
+
+    const result = await executeSendAllDocuments(
+      "LF-HDC-00020", "staff@example.com", "pdcoc-uuid", "contract-uuid", false, deps
+    );
+
+    expect(result).toEqual({ error: "PD & CoC template not found" });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("returns error when contract template is not found", async () => {
+    const mockFetch = vi.fn();
+    const deps = makeAllDocsDeps(mockFetch, "ann-pdcoc-001", null);
+
+    const result = await executeSendAllDocuments(
+      "LF-HDC-00020", "staff@example.com", "pdcoc-uuid", "contract-uuid", false, deps
+    );
+
+    expect(result).toEqual({ error: "Contract template not found" });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("POSTs to /v1/envelopes with 6 templates when flexibleWorkingOptedIn is false", async () => {
+    const mockFetch = makeSuccessFetch();
+    const deps = makeAllDocsDeps(mockFetch);
+
+    await executeSendAllDocuments(
+      "LF-HDC-00020", "staff@example.com", "pdcoc-uuid", "contract-uuid", false, deps
+    );
+
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://api.annature.com.au/v1/envelopes");
+    const body = JSON.parse(init.body as string);
+    expect(body.template_ids).toEqual([
+      "ann-pdcoc-001",
+      "ann-contract-001",
+      CONFLICT_TMPL,
+      CORE_POLICY_TMPL,
+      HIGH_INTENSITY_TMPL,
+      BEHAVIOUR_SUPPORT_TMPL,
+    ]);
+    expect(body.template_ids).toHaveLength(6);
+  });
+
+  it("POSTs with 7 templates when flexibleWorkingOptedIn is true", async () => {
+    const mockFetch = makeSuccessFetch();
+    const deps = makeAllDocsDeps(mockFetch);
+
+    await executeSendAllDocuments(
+      "LF-HDC-00020", "staff@example.com", "pdcoc-uuid", "contract-uuid", true, deps
+    );
+
+    const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(init.body as string);
+    expect(body.template_ids).toHaveLength(7);
+    expect(body.template_ids).toContain(FLEXIBLE_WORKING_TMPL);
+  });
+
+  it("returns error and does not persist when POST fails", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 422 });
+    const deps = makeAllDocsDeps(mockFetch);
+
+    const result = await executeSendAllDocuments(
+      "LF-HDC-00020", "staff@example.com", "pdcoc-uuid", "contract-uuid", false, deps
+    );
+
+    expect(result).toEqual({ error: "Annature API error: 422" });
+    expect(deps.persistEnvelopeData).not.toHaveBeenCalled();
+  });
+
+  it("calls GET /v1/envelopes/{id} after successful POST to retrieve signing URL", async () => {
+    const mockFetch = makeSuccessFetch("env-all-001");
+    const deps = makeAllDocsDeps(mockFetch);
+
+    await executeSendAllDocuments(
+      "LF-HDC-00020", "staff@example.com", "pdcoc-uuid", "contract-uuid", false, deps
+    );
+
+    const [getUrl] = mockFetch.mock.calls[1] as [string, RequestInit];
+    expect(getUrl).toBe("https://api.annature.com.au/v1/envelopes/env-all-001");
+  });
+
+  it("persists with signingUrl = null when GET fails, and does not return error", async () => {
+    const mockFetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "env-all-001" }) })
+      .mockRejectedValueOnce(new Error("Network error"));
+    const deps = makeAllDocsDeps(mockFetch);
+
+    const result = await executeSendAllDocuments(
+      "LF-HDC-00020", "staff@example.com", "pdcoc-uuid", "contract-uuid", false, deps
+    );
+
+    expect(deps.persistEnvelopeData).toHaveBeenCalledWith(
+      "LF-HDC-00020", "env-all-001", null, "pdcoc-uuid", false
+    );
+    expect(result).toEqual({ envelopeId: "env-all-001", signingUrl: null });
+  });
+
+  it("persists envelope data and returns envelopeId + signingUrl on full success", async () => {
+    const mockFetch = makeSuccessFetch("env-all-001", "https://sign.annature.com.au/xyz");
+    const deps = makeAllDocsDeps(mockFetch);
+
+    const result = await executeSendAllDocuments(
+      "LF-HDC-00020", "staff@example.com", "pdcoc-uuid", "contract-uuid", false, deps
+    );
+
+    expect(deps.persistEnvelopeData).toHaveBeenCalledWith(
+      "LF-HDC-00020",
+      "env-all-001",
+      "https://sign.annature.com.au/xyz",
+      "pdcoc-uuid",
+      false
+    );
+    expect(result).toEqual({
+      envelopeId: "env-all-001",
+      signingUrl: "https://sign.annature.com.au/xyz",
+    });
   });
 });

@@ -64,13 +64,15 @@ Documents are grouped into bundles that are sent together as a single Annature e
 
 | Bundle | Trigger | Documents |
 |---|---|---|
-| **Bundle A — Immediate** | When onboarding link is sent | Position Description, Code of Conduct |
+| **Combined — Immediate** | When onboarding link is sent (admin selects templates in popup) | Position Description & Code of Conduct (one combined template, selected by employment type/version), Employment Contract (selected by employment type/version), Conflict of Interest, Core Policy, High Intensity Policy, Implementing Behaviour Support, and optionally Flexible Working Arrangements (admin opts in per staff member) |
 | **TNA — Sequential** | After admin completes their TNA section | Training Needs Analysis (staff signs → admin countersigns) |
-| **Bundle B — Contract** | Admin manually sends when ready | Employment Contract (version selected), Flexible Working Arrangements, Core Policy, High Intensity Policy, Implementing Behaviour Support |
 | **Reference — Immediate** | When onboarding link is sent | Staff Handbook, SIL Voyager Staff Manual |
 
 ### Training Needs Analysis
 A collaborative two-step signing document. Admin enters training requirements first. Staff then add their own input via the token link. Annature sends a sequential envelope: staff sign first, the assigned admin countersigns second. Not a legacy field.
+
+### PD & CoC Template
+A versioned Position Description & Code of Conduct template registered in the `pd_coc_templates` table with a corresponding Annature template ID. Sent as a single Annature document (PD and CoC are combined). Admin selects the appropriate version per staff member at link-send time, grouped by employment type (permanent/casual) and version. Structure mirrors `contract_templates`.
 
 ### Contract Template
 A versioned employment contract template stored in Supabase Storage and registered in the `contract_templates` table with a corresponding Annature template ID. Six versions are in active simultaneous use:
@@ -113,9 +115,10 @@ Documents staff submit via the self-service token link. Each has an associated s
 | Item | Upload type | Conditional logic | Status milestones |
 |---|---|---|---|
 | Identity & Right to Work | Single upload zone | None — 100 points ID and right to work collected together | `not_completed` → `completed` |
-| WWCC | Single upload | "Have one? Upload. No? Instructions via Service NSW (~$80)" | `not_completed` → `in_progress` → `completed` |
-| NDIS Worker Screening Check | Single upload | "Have one? Upload. No? Apply via Service NSW, use Lifeheart ID: `4-IBS0H1Z`" | `not_completed` → `in_progress` → `pending_verification` → `completed` |
+| WWCC | Single upload | Upload dropzone + "Don't have one? Here's how to get it →" link (Service NSW) | `not_completed` → `completed` |
+| NDIS Worker Screening Check | Single upload | Upload dropzone + "Don't have one? Here's how to get it →" link (Service NSW, Lifeheart ID: `4-IBS0H1Z`) | `not_completed` → `in_progress` → `pending_verification` → `completed` |
 | NDIS Worker Orientation Module | Single upload | None | `not_completed` → `completed` |
+| Additional Training Certificates | Single upload | None — staff upload any additional training certificates | `not_completed` → `completed` |
 | Qualifications | Multiple uploads | None — any number of certificates, endorsements, licences | `not_completed` → `completed` |
 | First Aid & CPR | Multiple uploads | None | `not_completed` → `completed` |
 | Car Insurance | Single upload | None | `not_completed` → `completed` |

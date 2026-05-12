@@ -7,6 +7,7 @@ import {
   revokeToken,
   resendOnboardingLink,
 } from "@/app/actions/onboarding-link";
+import type { ContractTemplate, PdCocTemplate } from "@/lib/types";
 
 interface ActiveToken {
   id: string;
@@ -17,6 +18,8 @@ interface Props {
   isAdmin: boolean;
   isOfficer: boolean;
   activeToken?: ActiveToken | null;
+  contractTemplates: ContractTemplate[];
+  pdCocTemplates: PdCocTemplate[];
 }
 
 type ModalMode = "send" | "resend" | "revoke" | null;
@@ -26,9 +29,14 @@ export default function OnboardingLinkPanel({
   isAdmin,
   isOfficer,
   activeToken,
+  contractTemplates,
+  pdCocTemplates,
 }: Props) {
   const [mode, setMode] = useState<ModalMode>(null);
   const [email, setEmail] = useState("");
+  const [selectedPdCocTemplateId, setSelectedPdCocTemplateId] = useState("");
+  const [selectedContractTemplateId, setSelectedContractTemplateId] = useState("");
+  const [flexibleWorkingOptedIn, setFlexibleWorkingOptedIn] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -37,9 +45,17 @@ export default function OnboardingLinkPanel({
   const canSend = isAdmin || isOfficer;
   const hasActiveToken = !!activeToken && !tokenRevoked;
 
+  const permanentPdCoc = pdCocTemplates.filter((t) => t.employment_type === "permanent");
+  const casualPdCoc = pdCocTemplates.filter((t) => t.employment_type === "casual");
+  const permanentContracts = contractTemplates.filter((t) => t.employment_type === "permanent");
+  const casualContracts = contractTemplates.filter((t) => t.employment_type === "casual");
+
   function openModal(m: ModalMode) {
     setMode(m);
     setEmail("");
+    setSelectedPdCocTemplateId("");
+    setSelectedContractTemplateId("");
+    setFlexibleWorkingOptedIn(false);
     setError(null);
   }
 
@@ -53,15 +69,42 @@ export default function OnboardingLinkPanel({
       setError("Email address is required.");
       return;
     }
+    if (mode === "send") {
+      if (!selectedPdCocTemplateId) {
+        setError("Please select a Position Description & Code of Conduct template.");
+        return;
+      }
+      if (!selectedContractTemplateId) {
+        setError("Please select an Employment Contract template.");
+        return;
+      }
+    }
+
     setPending(true);
     setError(null);
-    const action = mode === "resend" ? resendOnboardingLink : sendOnboardingLink;
-    const result = await action(recordId, email.trim());
+
+    let result;
+    if (mode === "resend") {
+      result = await resendOnboardingLink(recordId, email.trim());
+    } else {
+      result = await sendOnboardingLink(
+        recordId,
+        email.trim(),
+        selectedPdCocTemplateId,
+        selectedContractTemplateId,
+        flexibleWorkingOptedIn
+      );
+    }
+
     setPending(false);
     if ("error" in result) {
       setError(result.error);
     } else {
-      setSuccess(mode === "resend" ? "New link sent." : "Onboarding link sent.");
+      if ("annatureWarning" in result && result.annatureWarning) {
+        setSuccess(`Link sent. Note: Annature documents could not be sent automatically — ${result.annatureWarning}`);
+      } else {
+        setSuccess(mode === "resend" ? "New link sent." : "Onboarding link sent.");
+      }
       closeModal();
     }
   }
@@ -133,26 +176,110 @@ export default function OnboardingLinkPanel({
       <Dialog.Root open={mode === "send" || mode === "resend"} onOpenChange={(open) => !open && closeModal()}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/40" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl p-6 w-full max-w-sm space-y-4">
+          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl p-6 w-full max-w-md space-y-4">
             <Dialog.Title className="text-base font-semibold text-gray-900">
               {mode === "resend" ? "Resend onboarding link" : "Send onboarding link"}
             </Dialog.Title>
             <Dialog.Description className="text-sm text-gray-500">
-              Enter the staff member&apos;s email address to dispatch the link.
+              {mode === "resend"
+                ? "Enter the staff member's email address to send a new link."
+                : "Enter the staff member's details. All signing documents will be sent immediately."}
             </Dialog.Description>
 
-            <div className="space-y-1">
-              <label htmlFor="email-input" className="text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <input
-                id="email-input"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="staff@example.com"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label htmlFor="email-input" className="text-sm font-medium text-gray-700">
+                  Email address
+                </label>
+                <input
+                  id="email-input"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="staff@example.com"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {mode === "send" && (
+                <>
+                  <div className="space-y-1">
+                    <label htmlFor="pd-coc-select" className="text-sm font-medium text-gray-700">
+                      Position Description & Code of Conduct
+                    </label>
+                    <select
+                      id="pd-coc-select"
+                      value={selectedPdCocTemplateId}
+                      onChange={(e) => setSelectedPdCocTemplateId(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select template…</option>
+                      {permanentPdCoc.length > 0 && (
+                        <optgroup label="Permanent">
+                          {permanentPdCoc.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name} (v{t.version})
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                      {casualPdCoc.length > 0 && (
+                        <optgroup label="Casual">
+                          {casualPdCoc.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name} (v{t.version})
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label htmlFor="contract-select" className="text-sm font-medium text-gray-700">
+                      Employment Contract
+                    </label>
+                    <select
+                      id="contract-select"
+                      value={selectedContractTemplateId}
+                      onChange={(e) => setSelectedContractTemplateId(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select template…</option>
+                      {permanentContracts.length > 0 && (
+                        <optgroup label="Permanent">
+                          {permanentContracts.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name} (v{t.version})
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                      {casualContracts.length > 0 && (
+                        <optgroup label="Casual">
+                          {casualContracts.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name} (v{t.version})
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                    </select>
+                  </div>
+
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={flexibleWorkingOptedIn}
+                      onChange={(e) => setFlexibleWorkingOptedIn(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">
+                      Include Flexible Working Arrangements
+                    </span>
+                  </label>
+                </>
+              )}
             </div>
 
             {error && (
