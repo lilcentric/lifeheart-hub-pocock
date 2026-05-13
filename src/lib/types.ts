@@ -105,23 +105,15 @@ export type OnboardingRecord = {
   // Phase 2: TNA status
   tna_status: OnboardingStatus;
 
-  // Overhaul: employment bundle send
-  flexible_working_opted_in: boolean;
-  signing_url: string | null;
-  fwa_envelope_id: string | null;
-  fwa_signing_url: string | null;
-  flexible_working_status: OnboardingStatus;
-  policies_status: OnboardingStatus;
-  additional_training_status: OnboardingStatus;
-  additional_training_storage_path: string | null;
-
   // Original compliance field (migration)
   screening_checks_status: OnboardingStatus;
 
-  // Phase 3: Onboarding overhaul
-  pd_coc_template_id: string | null;
-  flexible_working_opted_in: boolean | null;
+  // Migration 005 columns
   signing_url: string | null;
+  flexible_working_opted_in: boolean;
+  fwa_envelope_id: string | null;
+  fwa_signing_url: string | null;
+  flexible_working_status: OnboardingStatus;
   policies_status: OnboardingStatus;
   additional_training_status: OnboardingStatus;
   additional_training_storage_path: string | null;
