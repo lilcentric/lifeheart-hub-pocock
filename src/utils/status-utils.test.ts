@@ -15,6 +15,30 @@ describe("getStatusMeta", () => {
     expect(meta.label).toBeDefined();
     expect(meta.className).toBeDefined();
   });
+
+  it("returns metadata for all known status values", () => {
+    const all = [
+      "completed", "not_completed", "not_received", "not_signed",
+      "in_progress", "pending_verification", "na",
+    ] as const;
+    for (const s of all) {
+      const meta = getStatusMeta(s);
+      expect(meta.label).toBeDefined();
+      expect(meta.className).toBeDefined();
+    }
+  });
+
+  it("throws a descriptive error for undefined (ghost field from dropped DB column)", () => {
+    expect(() => getStatusMeta(undefined as never)).toThrow(
+      /getStatusMeta: unexpected status/
+    );
+  });
+
+  it("throws a descriptive error for null", () => {
+    expect(() => getStatusMeta(null as never)).toThrow(
+      /getStatusMeta: unexpected status/
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -32,7 +56,6 @@ describe("deriveOverallStatus", () => {
     code_of_conduct_status: "completed",
     employee_details_form_status: "completed",
     conflict_of_interest_status: "completed",
-    screening_checks_status: "completed",
     training_status: "completed",
     orientation_induction_status: "completed",
     training_needs_status: "completed",

@@ -38,7 +38,11 @@ const STATUS_META: Record<OnboardingStatus, StatusMeta> = {
 };
 
 export function getStatusMeta(status: OnboardingStatus): StatusMeta {
-  return STATUS_META[status];
+  const meta = STATUS_META[status];
+  if (!meta) {
+    throw new Error(`getStatusMeta: unexpected status: ${JSON.stringify(status)}`);
+  }
+  return meta;
 }
 
 // Status values valid for document fields (support not_received / not_signed)
