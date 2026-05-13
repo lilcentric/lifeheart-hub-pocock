@@ -117,7 +117,7 @@ function makeSuccessFetch(envelopeId = "env-all-001", signingLink = "https://sig
     })
     .mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ signers: [{ signing_link: signingLink }] }),
+      json: async () => ({ recipients: [{ signing_link: signingLink }] }),
     });
 }
 
@@ -203,11 +203,11 @@ describe("executeSendAllDocuments", () => {
       // Bundle POST
       .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "env-bundle-001" }) })
       // Bundle GET (signing URL)
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ signers: [{ signing_link: "https://sign.annature.com.au/bundle" }] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ recipients: [{ signing_link:"https://sign.annature.com.au/bundle" }] }) })
       // FWA POST
       .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "env-fwa-001" }) })
       // FWA GET (signing URL)
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ signers: [{ signing_link: "https://sign.annature.com.au/fwa" }] }) });
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ recipients: [{ signing_link:"https://sign.annature.com.au/fwa" }] }) });
 
     const deps = makeAllDocsDeps(mockFetch);
 
@@ -238,7 +238,7 @@ describe("executeSendAllDocuments", () => {
       // Bundle POST
       .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "env-bundle-001" }) })
       // Bundle GET (signing URL)
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ signers: [{ signing_link: "https://sign.annature.com.au/bundle" }] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ recipients: [{ signing_link:"https://sign.annature.com.au/bundle" }] }) })
       // FWA POST fails
       .mockRejectedValueOnce(new Error("FWA network error"));
 
