@@ -52,8 +52,7 @@ function requireEnv(name: string): string {
 export async function sendOnboardingLink(
   recordId: string,
   email: string,
-  pdCocTemplateId: string,
-  contractTemplateId: string,
+  employmentBundleId: string,
   flexibleWorkingOptedIn: boolean
 ): Promise<ActionResult> {
   const auth = await getAuthorisedRole("officer");
@@ -83,8 +82,7 @@ export async function sendOnboardingLink(
     const annatureResult = await executeSendAllDocuments(
       recordId,
       email,
-      pdCocTemplateId,
-      contractTemplateId,
+      employmentBundleId,
       flexibleWorkingOptedIn,
       {
         fetch: globalThis.fetch,
@@ -92,41 +90,34 @@ export async function sendOnboardingLink(
         annatureKey: requireEnv("ANNATURE_KEY"),
         accountId: requireEnv("ANNATURE_ACCOUNT_ID"),
         roleId: requireEnv("ANNATURE_ROLE_ID"),
-        conflictOfInterestTemplateId: requireEnv("ANNATURE_CONFLICT_OF_INTEREST_TEMPLATE_ID"),
-        corePolicyTemplateId: requireEnv("ANNATURE_CORE_POLICY_TEMPLATE_ID"),
-        highIntensityTemplateId: requireEnv("ANNATURE_HIGH_INTENSITY_TEMPLATE_ID"),
-        behaviourSupportTemplateId: requireEnv("ANNATURE_BEHAVIOUR_SUPPORT_TEMPLATE_ID"),
         flexibleWorkingTemplateId: requireEnv("ANNATURE_FLEXIBLE_WORKING_TEMPLATE_ID"),
-        getPdCocAnnatureTemplateId: async (id) => {
+        getEmploymentBundleAnnatureTemplateId: async (id) => {
           const { data } = await supabase
-            .from("pd_coc_templates")
-            .select("template_id")
+            .from("employment_bundle_templates")
+            .select("annature_template_id")
             .eq("id", id)
             .single();
-          return (data as { template_id: string } | null)?.template_id ?? null;
-        },
-        getContractAnnatureTemplateId: async (id) => {
-          const { data } = await supabase
-            .from("contract_templates")
-            .select("template_id")
-            .eq("id", id)
-            .single();
-          return (data as { template_id: string } | null)?.template_id ?? null;
+          return (data as { annature_template_id: string } | null)?.annature_template_id ?? null;
         },
         persistEnvelopeData: async (
           recId,
           envelopeId,
           signingUrl,
-          pdCocTmplId,
-          fwOptedIn
+          bundleId,
+          fwOptedIn,
+          fwaEnvelopeId,
+          fwaSigningUrl
         ) => {
           const { error } = await supabase
             .from("onboarding_records")
             .update({
               bundle_a_envelope_id: envelopeId,
               signing_url: signingUrl,
-              pd_coc_template_id: pdCocTmplId,
+              employment_bundle_id: bundleId,
               flexible_working_opted_in: fwOptedIn,
+              fwa_envelope_id: fwaEnvelopeId,
+              fwa_signing_url: fwaSigningUrl,
+              flexible_working_status: fwOptedIn ? "not_completed" : "na",
             })
             .eq("id", recId);
           return { error: error?.message ?? null };

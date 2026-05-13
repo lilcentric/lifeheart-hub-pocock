@@ -11,7 +11,7 @@ const baseRecord: OnboardingRecord = {
   date_shift_began: null,
   archived_at: null,
   archived_by: null,
-  contract_template_id: null,
+  employment_bundle_id: null,
   xero_employee_id: null,
   job_application_status: "completed",
   interview_status: "completed",
@@ -42,11 +42,12 @@ const baseRecord: OnboardingRecord = {
   ndiswsc_storage_path: null,
   bundle_a_envelope_id: null,
   tna_envelope_id: null,
-  bundle_b_envelope_id: null,
   // Overhaul fields
-  pd_coc_template_id: null,
   flexible_working_opted_in: false,
   signing_url: null,
+  fwa_envelope_id: null,
+  fwa_signing_url: null,
+  flexible_working_status: "na",
   policies_status: "not_completed",
   additional_training_status: "not_completed",
   additional_training_storage_path: null,
@@ -55,12 +56,43 @@ const baseRecord: OnboardingRecord = {
 };
 
 describe("getPortalItems", () => {
-  it("returns exactly 13 items", () => {
+  it("returns exactly 13 items when flexible_working_opted_in is false", () => {
     const items = getPortalItems(baseRecord, "tok-abc");
     expect(items).toHaveLength(13);
   });
 
-  it("returns items in the correct order", () => {
+  it("returns exactly 14 items when flexible_working_opted_in is true", () => {
+    const record = { ...baseRecord, flexible_working_opted_in: true, flexible_working_status: "not_completed" as const };
+    const items = getPortalItems(record, "tok-abc");
+    expect(items).toHaveLength(14);
+  });
+
+  it("item 14 is flexible_working_status with kind=sign and uses fwa_signing_url", () => {
+    const record = {
+      ...baseRecord,
+      flexible_working_opted_in: true,
+      flexible_working_status: "not_completed" as const,
+      fwa_signing_url: "https://sign.annature.com.au/fwa-123",
+    };
+    const items = getPortalItems(record, "tok-abc");
+    const fwaItem = items[13];
+    expect(fwaItem).toMatchObject({
+      key: "flexible_working_status",
+      kind: "sign",
+      label: "Flexible Working Agreement",
+      status: "not_completed",
+    });
+    expect((fwaItem as { signingUrl: string | null }).signingUrl).toBe("https://sign.annature.com.au/fwa-123");
+  });
+
+  it("flexible_working_status item has signingUrl=null when fwa_signing_url is null", () => {
+    const record = { ...baseRecord, flexible_working_opted_in: true, flexible_working_status: "not_completed" as const };
+    const items = getPortalItems(record, "tok-abc");
+    const fwaItem = items[13];
+    expect((fwaItem as { signingUrl: string | null }).signingUrl).toBeNull();
+  });
+
+  it("returns items in the correct order (first 13)", () => {
     const items = getPortalItems(baseRecord, "tok-abc");
     const keys = items.map((i) => i.key);
     expect(keys).toEqual([
@@ -89,7 +121,7 @@ describe("getPortalItems", () => {
     });
   });
 
-  it("sign items carry signingUrl from record", () => {
+  it("sign items carry signingUrl from record (4 sign items when opted_in=false)", () => {
     const record = { ...baseRecord, signing_url: "https://sign.annature.com.au/xyz" };
     const items = getPortalItems(record, "tok-abc");
     const signItems = items.filter((i) => i.kind === "sign");

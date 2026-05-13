@@ -107,28 +107,41 @@ describe("executeAnnatureWebhook — combined envelope (bundle_a)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Bundle B (legacy path — no longer sent for new records)
+// FWA envelope
 // ---------------------------------------------------------------------------
 
-describe("executeAnnatureWebhook — Bundle B (legacy)", () => {
-  it("updates employment_contract_status to completed for in-flight legacy envelopes", async () => {
+describe("executeAnnatureWebhook — FWA envelope", () => {
+  it("sets flexible_working_status to completed when envelopeType is fwa", async () => {
     const deps = makeDeps({
       findRecordByEnvelopeId: vi.fn().mockResolvedValue({
-        recordId: "LF-HDC-00002",
-        envelopeType: "bundle_b",
+        recordId: "LF-HDC-00005",
+        envelopeType: "fwa",
       }),
     });
 
     const result = await executeAnnatureWebhook(
-      makePayload("env-bundle-b"),
+      makePayload("env-fwa"),
       "valid-sig",
       deps
     );
 
     expect(result).toEqual({ status: 200 });
-    expect(deps.updateRecordFields).toHaveBeenCalledWith("LF-HDC-00002", {
-      employment_contract_status: "completed",
+    expect(deps.updateRecordFields).toHaveBeenCalledWith("LF-HDC-00005", {
+      flexible_working_status: "completed",
     });
+  });
+
+  it("does not call fetchAndStorePdf for fwa envelope", async () => {
+    const deps = makeDeps({
+      findRecordByEnvelopeId: vi.fn().mockResolvedValue({
+        recordId: "LF-HDC-00005",
+        envelopeType: "fwa",
+      }),
+    });
+
+    await executeAnnatureWebhook(makePayload("env-fwa"), "valid-sig", deps);
+
+    expect(deps.fetchAndStorePdf).not.toHaveBeenCalled();
   });
 });
 

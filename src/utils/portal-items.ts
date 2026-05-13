@@ -46,7 +46,7 @@ export type AnyPortalItem =
 export function getPortalItems(record: OnboardingRecord, token: string): AnyPortalItem[] {
   const signingUrl = record.signing_url ?? null;
 
-  return [
+  const items: AnyPortalItem[] = [
     {
       kind: "form",
       key: "employee_details_form_status",
@@ -150,6 +150,19 @@ export function getPortalItems(record: OnboardingRecord, token: string): AnyPort
       documentType: "first_aid_cpr",
     },
   ];
+
+  // Item 14: FWA — only shown when flexible working was opted in
+  if (record.flexible_working_opted_in) {
+    items.push({
+      kind: "sign",
+      key: "flexible_working_status",
+      label: "Flexible Working Agreement",
+      status: record.flexible_working_status,
+      signingUrl: record.fwa_signing_url ?? null,
+    });
+  }
+
+  return items;
 }
 
 // ── Legacy exports (deprecated — used by old portal page, remove after staff portal rewrite) ────

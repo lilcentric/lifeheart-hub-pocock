@@ -33,7 +33,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       const columns = [
         { col: "bundle_a_envelope_id", type: "bundle_a" as const },
         { col: "tna_envelope_id", type: "tna" as const },
-        { col: "bundle_b_envelope_id", type: "bundle_b" as const },
+        { col: "fwa_envelope_id", type: "fwa" as const },
       ];
 
       for (const { col, type } of columns) {

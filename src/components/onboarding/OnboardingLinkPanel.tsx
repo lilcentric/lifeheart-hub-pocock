@@ -7,7 +7,7 @@ import {
   revokeToken,
   resendOnboardingLink,
 } from "@/app/actions/onboarding-link";
-import type { ContractTemplate, PdCocTemplate } from "@/lib/types";
+import type { EmploymentBundleTemplate } from "@/lib/types";
 
 interface ActiveToken {
   id: string;
@@ -18,8 +18,7 @@ interface Props {
   isAdmin: boolean;
   isOfficer: boolean;
   activeToken?: ActiveToken | null;
-  contractTemplates: ContractTemplate[];
-  pdCocTemplates: PdCocTemplate[];
+  employmentBundles: EmploymentBundleTemplate[];
 }
 
 type ModalMode = "send" | "resend" | "revoke" | null;
@@ -29,13 +28,11 @@ export default function OnboardingLinkPanel({
   isAdmin,
   isOfficer,
   activeToken,
-  contractTemplates,
-  pdCocTemplates,
+  employmentBundles,
 }: Props) {
   const [mode, setMode] = useState<ModalMode>(null);
   const [email, setEmail] = useState("");
-  const [selectedPdCocTemplateId, setSelectedPdCocTemplateId] = useState("");
-  const [selectedContractTemplateId, setSelectedContractTemplateId] = useState("");
+  const [selectedBundleId, setSelectedBundleId] = useState("");
   const [flexibleWorkingOptedIn, setFlexibleWorkingOptedIn] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,16 +42,13 @@ export default function OnboardingLinkPanel({
   const canSend = isAdmin || isOfficer;
   const hasActiveToken = !!activeToken && !tokenRevoked;
 
-  const permanentPdCoc = pdCocTemplates.filter((t) => t.employment_type === "permanent");
-  const casualPdCoc = pdCocTemplates.filter((t) => t.employment_type === "casual");
-  const permanentContracts = contractTemplates.filter((t) => t.employment_type === "permanent");
-  const casualContracts = contractTemplates.filter((t) => t.employment_type === "casual");
+  const permanentBundles = employmentBundles.filter((t) => t.employment_type === "permanent");
+  const casualBundles = employmentBundles.filter((t) => t.employment_type === "casual");
 
   function openModal(m: ModalMode) {
     setMode(m);
     setEmail("");
-    setSelectedPdCocTemplateId("");
-    setSelectedContractTemplateId("");
+    setSelectedBundleId("");
     setFlexibleWorkingOptedIn(false);
     setError(null);
   }
@@ -70,12 +64,8 @@ export default function OnboardingLinkPanel({
       return;
     }
     if (mode === "send") {
-      if (!selectedPdCocTemplateId) {
-        setError("Please select a Position Description & Code of Conduct template.");
-        return;
-      }
-      if (!selectedContractTemplateId) {
-        setError("Please select an Employment Contract template.");
+      if (!selectedBundleId) {
+        setError("Please select an Employment Bundle template.");
         return;
       }
     }
@@ -90,8 +80,7 @@ export default function OnboardingLinkPanel({
       result = await sendOnboardingLink(
         recordId,
         email.trim(),
-        selectedPdCocTemplateId,
-        selectedContractTemplateId,
+        selectedBundleId,
         flexibleWorkingOptedIn
       );
     }
@@ -204,60 +193,28 @@ export default function OnboardingLinkPanel({
               {mode === "send" && (
                 <>
                   <div className="space-y-1">
-                    <label htmlFor="pd-coc-select" className="text-sm font-medium text-gray-700">
-                      Position Description & Code of Conduct
+                    <label htmlFor="bundle-select" className="text-sm font-medium text-gray-700">
+                      Employment Bundle
                     </label>
                     <select
-                      id="pd-coc-select"
-                      value={selectedPdCocTemplateId}
-                      onChange={(e) => setSelectedPdCocTemplateId(e.target.value)}
+                      id="bundle-select"
+                      value={selectedBundleId}
+                      onChange={(e) => setSelectedBundleId(e.target.value)}
                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="">Select template…</option>
-                      {permanentPdCoc.length > 0 && (
+                      <option value="">Select bundle…</option>
+                      {permanentBundles.length > 0 && (
                         <optgroup label="Permanent">
-                          {permanentPdCoc.map((t) => (
+                          {permanentBundles.map((t) => (
                             <option key={t.id} value={t.id}>
                               {t.name} (v{t.version})
                             </option>
                           ))}
                         </optgroup>
                       )}
-                      {casualPdCoc.length > 0 && (
+                      {casualBundles.length > 0 && (
                         <optgroup label="Casual">
-                          {casualPdCoc.map((t) => (
-                            <option key={t.id} value={t.id}>
-                              {t.name} (v{t.version})
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label htmlFor="contract-select" className="text-sm font-medium text-gray-700">
-                      Employment Contract
-                    </label>
-                    <select
-                      id="contract-select"
-                      value={selectedContractTemplateId}
-                      onChange={(e) => setSelectedContractTemplateId(e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select template…</option>
-                      {permanentContracts.length > 0 && (
-                        <optgroup label="Permanent">
-                          {permanentContracts.map((t) => (
-                            <option key={t.id} value={t.id}>
-                              {t.name} (v{t.version})
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      {casualContracts.length > 0 && (
-                        <optgroup label="Casual">
-                          {casualContracts.map((t) => (
+                          {casualBundles.map((t) => (
                             <option key={t.id} value={t.id}>
                               {t.name} (v{t.version})
                             </option>
