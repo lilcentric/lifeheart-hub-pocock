@@ -49,7 +49,6 @@ const REGISTRY = {
   uniforms_status: { include: true, group: "Admin", label: "Uniforms", legacy: true },
 
   // Excluded from overall completion check
-  screening_checks_status:    { include: false, group: "Admin", label: "Screening Checks" },   // superseded by ndiswsc_status
   flexible_working_status:    { include: false, group: "Admin", label: "Flexible Working" },   // FWA optional; tracked separately
   policies_status:            { include: false, group: "Admin", label: "Policies" },            // set by webhook, not a standalone item
   additional_training_status: { include: false, group: "Admin", label: "Additional Training" }, // optional upload

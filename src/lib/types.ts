@@ -105,9 +105,6 @@ export type OnboardingRecord = {
   // Phase 2: TNA status
   tna_status: OnboardingStatus;
 
-  // Original compliance field (migration)
-  screening_checks_status: OnboardingStatus;
-
   // Migration 005 columns
   signing_url: string | null;
   flexible_working_opted_in: boolean;
