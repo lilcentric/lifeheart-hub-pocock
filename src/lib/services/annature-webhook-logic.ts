@@ -44,12 +44,42 @@ const FWA_FIELDS: Record<string, string> = {
   flexible_working_status: "completed",
 };
 
+type EnvelopeHandler = (params: {
+  recordId: string;
+  envelopeId: string;
+  signingEvent: string | undefined;
+  deps: Pick<AnnatureWebhookDeps, "updateRecordFields" | "fetchAndStorePdf">;
+}) => Promise<void>;
+
+// Exhaustiveness-checked dispatch table: adding a new EnvelopeType without
+// adding a handler here is a compile error.
+const ENVELOPE_HANDLERS: Record<EnvelopeType, EnvelopeHandler> = {
+  bundle_a: async ({ recordId, envelopeId, deps }) => {
+    await deps.updateRecordFields(recordId, COMBINED_ENVELOPE_FIELDS);
+    await deps.fetchAndStorePdf(recordId, envelopeId, "bundle_a");
+  },
+
+  fwa: async ({ recordId, deps }) => {
+    await deps.updateRecordFields(recordId, FWA_FIELDS);
+  },
+
+  tna: async ({ recordId, signingEvent, deps }) => {
+    if (signingEvent === "staff") {
+      await deps.updateRecordFields(recordId, {
+        tna_staff_signed_at: new Date().toISOString(),
+      });
+    } else if (signingEvent === "admin") {
+      await deps.updateRecordFields(recordId, { tna_status: "completed" });
+    }
+  },
+};
+
 export async function executeAnnatureWebhook(
   rawBody: string,
   signature: string,
   deps: AnnatureWebhookDeps
 ): Promise<WebhookResult> {
-  const { webhookSecret, validateHmac, findRecordByEnvelopeId, updateRecordFields, fetchAndStorePdf } = deps;
+  const { webhookSecret, validateHmac, findRecordByEnvelopeId } = deps;
 
   if (!validateHmac(rawBody, signature, webhookSecret)) {
     return { status: 400, error: "Invalid signature" };
@@ -61,22 +91,13 @@ export async function executeAnnatureWebhook(
   const found = await findRecordByEnvelopeId(envelope_id);
   if (!found) return { status: 200 };
 
-  const { recordId, envelopeType } = found;
-
-  if (envelopeType === "bundle_a") {
-    await updateRecordFields(recordId, COMBINED_ENVELOPE_FIELDS);
-    await fetchAndStorePdf(recordId, envelope_id, "bundle_a");
-  } else if (envelopeType === "fwa") {
-    await updateRecordFields(recordId, FWA_FIELDS);
-  } else if (envelopeType === "tna") {
-    if (signing_event === "staff") {
-      await updateRecordFields(recordId, {
-        tna_staff_signed_at: new Date().toISOString(),
-      });
-    } else if (signing_event === "admin") {
-      await updateRecordFields(recordId, { tna_status: "completed" });
-    }
-  }
+  const handler = ENVELOPE_HANDLERS[found.envelopeType];
+  await handler({
+    recordId: found.recordId,
+    envelopeId: envelope_id,
+    signingEvent: signing_event,
+    deps,
+  });
 
   return { status: 200 };
 }

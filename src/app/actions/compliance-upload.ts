@@ -42,10 +42,10 @@ export async function recordComplianceUpload(
   if (!user) return { error: "Unauthorised" };
 
   const result = await executeComplianceUpload(recordId, documentType, path, {
-    recordPath: async (id, docType, storagePath) => {
+    recordPath: async (id, pathField, storagePath) => {
       const { error } = await supabase
         .from("onboarding_records")
-        .update({ [`${docType}_storage_path`]: storagePath })
+        .update({ [pathField]: storagePath } as never)
         .eq("id", id);
       return { error: error ? { message: error.message } : null };
     },

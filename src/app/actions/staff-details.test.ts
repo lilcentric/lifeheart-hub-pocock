@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { OnboardingRecord, OnboardingToken } from "@/lib/types";
+import type { OnboardingRecord } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Mock hoisting
 // ---------------------------------------------------------------------------
 
-const { mockValidateToken, mockUpsert, mockUpdate, mockServiceClient } =
+const { mockResolveStaffToken, mockUpsert, mockUpdate, mockServiceClient } =
   vi.hoisted(() => {
     const mockUpsert = vi.fn();
     const mockUpdate = vi.fn();
@@ -24,9 +24,9 @@ const { mockValidateToken, mockUpsert, mockUpdate, mockServiceClient } =
     });
 
     const mockServiceClient = { from: mockFrom };
-    const mockValidateToken = vi.fn();
+    const mockResolveStaffToken = vi.fn();
 
-    return { mockValidateToken, mockUpsert, mockUpdate, mockServiceClient };
+    return { mockResolveStaffToken, mockUpsert, mockUpdate, mockServiceClient };
   });
 
 vi.mock("@/lib/supabase/service", () => ({
@@ -34,7 +34,7 @@ vi.mock("@/lib/supabase/service", () => ({
 }));
 
 vi.mock("@/lib/token-service", () => ({
-  validateToken: mockValidateToken,
+  resolveStaffToken: mockResolveStaffToken,
 }));
 
 import { submitStaffDetails } from "./staff-details";
@@ -120,7 +120,7 @@ beforeEach(() => {
 
 describe("submitStaffDetails", () => {
   it("returns error when token is invalid or expired", async () => {
-    mockValidateToken.mockResolvedValue(null);
+    mockResolveStaffToken.mockResolvedValue(null);
 
     const result = await submitStaffDetails("bad-token", VALID_INPUT);
 
@@ -129,7 +129,7 @@ describe("submitStaffDetails", () => {
   });
 
   it("upserts staff_details row on valid token", async () => {
-    mockValidateToken.mockResolvedValue(RECORD);
+    mockResolveStaffToken.mockResolvedValue(RECORD);
 
     const result = await submitStaffDetails("good-token", VALID_INPUT);
 
@@ -148,7 +148,7 @@ describe("submitStaffDetails", () => {
   });
 
   it("updates employee_details_form_status to completed on success", async () => {
-    mockValidateToken.mockResolvedValue(RECORD);
+    mockResolveStaffToken.mockResolvedValue(RECORD);
 
     await submitStaffDetails("good-token", VALID_INPUT);
 
@@ -156,7 +156,7 @@ describe("submitStaffDetails", () => {
   });
 
   it("returns error when upsert fails", async () => {
-    mockValidateToken.mockResolvedValue(RECORD);
+    mockResolveStaffToken.mockResolvedValue(RECORD);
     mockUpsert.mockResolvedValue({ error: { message: "DB write failed" } });
 
     const result = await submitStaffDetails("good-token", VALID_INPUT);
@@ -166,7 +166,7 @@ describe("submitStaffDetails", () => {
   });
 
   it("returns error when status update fails", async () => {
-    mockValidateToken.mockResolvedValue(RECORD);
+    mockResolveStaffToken.mockResolvedValue(RECORD);
     mockUpdate.mockResolvedValue({ error: { message: "Status update failed" } });
 
     const result = await submitStaffDetails("good-token", VALID_INPUT);

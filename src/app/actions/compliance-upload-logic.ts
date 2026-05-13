@@ -1,4 +1,4 @@
-import type { OnboardingStatus } from "@/lib/types";
+import { SINGLE_UPLOAD_CONFIG } from "@/lib/upload-kind-registry";
 
 export type ComplianceDocumentType =
   | "identity_right_to_work"
@@ -6,25 +6,18 @@ export type ComplianceDocumentType =
   | "car_insurance"
   | "additional_training";
 
-const DOCUMENT_STATUS_FIELDS: Record<ComplianceDocumentType, string> = {
-  identity_right_to_work: "identity_right_to_work_status",
-  ndis_orientation: "ndis_orientation_status",
-  car_insurance: "car_insurance_status",
-  additional_training: "additional_training_status",
-};
-
-const VALID_TYPES = new Set<string>(Object.keys(DOCUMENT_STATUS_FIELDS));
+const VALID_TYPES = new Set<string>(["identity_right_to_work", "ndis_orientation", "car_insurance", "additional_training"]);
 
 export interface ComplianceUploadDeps {
   recordPath: (
     recordId: string,
-    documentType: string,
+    pathField: string,
     path: string
   ) => Promise<{ error: { message: string } | null }>;
   updateStatus: (
     recordId: string,
     statusField: string,
-    status: OnboardingStatus
+    status: "completed"
   ) => Promise<{ error: { message: string } | null }>;
 }
 
@@ -40,11 +33,12 @@ export async function executeComplianceUpload(
     return { error: "Invalid document type" };
   }
 
-  const pathResult = await deps.recordPath(recordId, documentType, path);
+  const config = SINGLE_UPLOAD_CONFIG[documentType];
+
+  const pathResult = await deps.recordPath(recordId, config.pathField, path);
   if (pathResult.error) return { error: pathResult.error.message };
 
-  const statusField = DOCUMENT_STATUS_FIELDS[documentType];
-  const statusResult = await deps.updateStatus(recordId, statusField, "completed");
+  const statusResult = await deps.updateStatus(recordId, config.statusField, "completed");
   if (statusResult.error) return { error: statusResult.error.message };
 
   return { success: true };
