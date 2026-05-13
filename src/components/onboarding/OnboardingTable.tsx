@@ -13,6 +13,7 @@ import {
 } from "@tanstack/react-table";
 import StatusBadge from "./StatusBadge";
 import { deriveOverallStatus } from "@/utils/status-utils";
+import { COLUMN_GROUPS, LEGACY_STATUS_FIELDS } from "@/lib/onboarding-status-fields";
 import type { OnboardingRecord, OnboardingStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -27,65 +28,6 @@ interface Props {
   currentUserRole: string;
 }
 
-// Columns visible but dimmed (legacy — pending lean workflow removal)
-const LEGACY_FIELDS = new Set<keyof OnboardingRecord>([
-  "cv_status",
-  "training_needs_status",
-  "uniforms_status",
-]);
-
-type ColumnGroup = {
-  label: string;
-  columns: { key: keyof OnboardingRecord; label: string }[];
-};
-
-const COLUMN_GROUPS: ColumnGroup[] = [
-  {
-    label: "Recruitment",
-    columns: [
-      { key: "job_application_status", label: "Job Application" },
-      { key: "interview_status", label: "Interview" },
-      { key: "reference_checks_status", label: "References" },
-      { key: "cv_status", label: "CV" },
-    ],
-  },
-  {
-    label: "Documentation",
-    columns: [
-      { key: "position_description_status", label: "Position Description" },
-      { key: "employment_contract_status", label: "Contract" },
-      { key: "code_of_conduct_status", label: "Code of Conduct" },
-      { key: "employee_details_form_status", label: "Employee Details" },
-      { key: "conflict_of_interest_status", label: "Conflict of Interest" },
-    ],
-  },
-  {
-    label: "Compliance & Identity",
-    columns: [
-      { key: "identity_right_to_work_status", label: "ID / Right to Work" },
-      { key: "wwcc_status", label: "WWCC" },
-      { key: "ndiswsc_status", label: "NDISWSC" },
-      { key: "ndis_orientation_status", label: "NDIS Orientation" },
-      { key: "qualifications_status", label: "Qualifications" },
-      { key: "first_aid_cpr_status", label: "First Aid & CPR" },
-      { key: "car_insurance_status", label: "Car Insurance" },
-    ],
-  },
-  {
-    label: "Training",
-    columns: [
-      { key: "training_status", label: "Training" },
-      { key: "orientation_induction_status", label: "Orientation/Induction" },
-      { key: "training_needs_status", label: "Training Needs" },
-    ],
-  },
-  {
-    label: "Admin",
-    columns: [
-      { key: "uniforms_status", label: "Uniforms" },
-    ],
-  },
-];
 
 export default function OnboardingTable({
   records,
@@ -108,7 +50,7 @@ export default function OnboardingTable({
         cell: ({ getValue }) => (
           <StatusBadge
             status={getValue() as OnboardingStatus}
-            legacy={LEGACY_FIELDS.has(key)}
+            legacy={LEGACY_STATUS_FIELDS.has(key)}
           />
         ),
       })

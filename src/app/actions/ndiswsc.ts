@@ -2,7 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { OnboardingStatus, Profile } from "@/lib/types";
+import { withRole } from "@/lib/auth-guard";
+import type { OnboardingStatus } from "@/lib/types";
 import { executeNdisWscTransition } from "./ndiswsc-logic";
 
 type ActionResult = { success: true } | { error: string };
@@ -26,37 +27,26 @@ async function _updateNdisWsc(
   currentStatus: OnboardingStatus,
   targetStatus: OnboardingStatus
 ): Promise<ActionResult> {
-  const supabase = await createClient();
+  return withRole("officer", async (ctx) => {
+    const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorised" };
+    const result = await executeNdisWscTransition({
+      recordId,
+      currentStatus,
+      targetStatus,
+      userRole: ctx.role,
+      updateRecord: async (id, status) => {
+        const { error } = await supabase
+          .from("onboarding_records")
+          .update({ ndiswsc_status: status })
+          .eq("id", id);
+        return { error: error ? { message: error.message } : null };
+      },
+    });
 
-  const { data: rawProfile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  const profile = rawProfile as Pick<Profile, "role"> | null;
-  if (!profile) return { error: "Unauthorised" };
-
-  const result = await executeNdisWscTransition({
-    recordId,
-    currentStatus,
-    targetStatus,
-    userRole: profile.role,
-    updateRecord: async (id, status) => {
-      const { error } = await supabase
-        .from("onboarding_records")
-        .update({ ndiswsc_status: status })
-        .eq("id", id);
-      return { error: error ? { message: error.message } : null };
-    },
+    if ("success" in result) {
+      revalidatePath(`/onboarding/${recordId}`);
+    }
+    return result;
   });
-
-  if ("success" in result) {
-    revalidatePath(`/onboarding/${recordId}`);
-  }
-  return result;
 }

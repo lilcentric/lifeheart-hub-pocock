@@ -73,6 +73,16 @@ export function isDocumentField(field: keyof OnboardingRecord): boolean {
 }
 
 
+// Maps DB status values to what staff see in the portal. pending_verification is
+// an internal state (admin-visible only); staff see it as in_progress.
+const PORTAL_STATUS_OVERRIDES: Partial<Record<OnboardingStatus, OnboardingStatus>> = {
+  pending_verification: "in_progress",
+};
+
+export function getPortalStatus(status: OnboardingStatus): OnboardingStatus {
+  return PORTAL_STATUS_OVERRIDES[status] ?? status;
+}
+
 export function deriveOverallStatus(
   record: Pick<OnboardingRecord, StatusField>
 ): "Completed" | "In Progress" {

@@ -11,6 +11,7 @@ import {
   GENERAL_STATUSES,
   DOCUMENT_FIELDS,
 } from "@/utils/status-utils";
+import { LEGACY_STATUS_FIELDS } from "@/lib/onboarding-status-fields";
 import type { OnboardingRecord, OnboardingStatus, Profile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -58,35 +59,10 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-type StatusFieldKey = keyof Pick<
+type StatusFieldKey = keyof Omit<
   FormValues,
-  | "job_application_status"
-  | "interview_status"
-  | "reference_checks_status"
-  | "cv_status"
-  | "position_description_status"
-  | "employment_contract_status"
-  | "code_of_conduct_status"
-  | "employee_details_form_status"
-  | "conflict_of_interest_status"
-  | "training_status"
-  | "orientation_induction_status"
-  | "identity_right_to_work_status"
-  | "wwcc_status"
-  | "ndiswsc_status"
-  | "ndis_orientation_status"
-  | "qualifications_status"
-  | "first_aid_cpr_status"
-  | "car_insurance_status"
-  | "training_needs_status"
-  | "uniforms_status"
+  "staff_name" | "onboarding_officer" | "date_onboarding_began" | "date_shift_began"
 >;
-
-const LEGACY_FIELDS = new Set<StatusFieldKey>([
-  "cv_status",
-  "training_needs_status",
-  "uniforms_status",
-]);
 
 type FieldGroup = {
   label: string;
@@ -338,7 +314,7 @@ export default function OnboardingForm({
           <h2 className="text-sm font-semibold text-gray-900">{group.label}</h2>
           <div className="grid grid-cols-2 gap-4">
             {group.fields.map(({ key, label }) => {
-              const isLegacy = LEGACY_FIELDS.has(key);
+              const isLegacy = LEGACY_STATUS_FIELDS.has(key);
               const options = isDocField(key)
                 ? DOCUMENT_STATUSES
                 : GENERAL_STATUSES;
