@@ -118,6 +118,14 @@ export type OnboardingRecord = {
   // Original compliance field (migration)
   screening_checks_status: OnboardingStatus;
 
+  // Phase 3: Onboarding overhaul
+  pd_coc_template_id: string | null;
+  flexible_working_opted_in: boolean | null;
+  signing_url: string | null;
+  policies_status: OnboardingStatus;
+  additional_training_status: OnboardingStatus;
+  additional_training_storage_path: string | null;
+
   // Timestamps
   created_at: string;
   updated_at: string;
