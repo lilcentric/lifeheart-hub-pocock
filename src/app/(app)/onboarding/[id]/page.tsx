@@ -68,7 +68,10 @@ export default async function EditOnboardingPage({ params }: Props) {
   const activeToken = rawToken as { id: string } | null;
 
   const employmentBundles: EmploymentBundleTemplate[] = isAdmin
-    ? await getActiveEmploymentBundles().catch(() => [] as EmploymentBundleTemplate[])
+    ? await getActiveEmploymentBundles().catch((err) => {
+        console.error("[onboarding] Failed to load employment bundles:", err);
+        return [] as EmploymentBundleTemplate[];
+      })
     : [];
 
   let ndiswscDownloadUrl: string | null = null;
