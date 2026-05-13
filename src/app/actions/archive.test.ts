@@ -56,7 +56,7 @@ describe("archiveAction", () => {
     const result = await archiveAction("LF-HDC-00001");
 
     expect(archiveRecord).not.toHaveBeenCalled();
-    expect(result).toEqual({ error: "Unauthorized" });
+    expect(result).toEqual({ error: "Unauthorised" });
   });
 
   it("returns unauthorized error when user is viewer", async () => {
@@ -65,7 +65,7 @@ describe("archiveAction", () => {
     const result = await archiveAction("LF-HDC-00001");
 
     expect(archiveRecord).not.toHaveBeenCalled();
-    expect(result).toEqual({ error: "Unauthorized" });
+    expect(result).toEqual({ error: "Unauthorised" });
   });
 
   it("returns error message when archiveRecord fails", async () => {
@@ -96,7 +96,7 @@ describe("unarchiveAction", () => {
     const result = await unarchiveAction("LF-HDC-00001");
 
     expect(unarchiveRecord).not.toHaveBeenCalled();
-    expect(result).toEqual({ error: "Unauthorized" });
+    expect(result).toEqual({ error: "Unauthorised" });
   });
 
   it("returns error message when unarchiveRecord fails", async () => {

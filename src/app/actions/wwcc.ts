@@ -2,8 +2,11 @@
 
 import { createServiceClient } from "@/lib/supabase/service";
 import { StorageService } from "@/lib/storage-service";
+import { SINGLE_UPLOAD_CONFIG } from "@/lib/upload-kind-registry";
 import { revalidatePath } from "next/cache";
 import { executeWwccApplying, executeWwccUploadComplete } from "./wwcc-logic";
+
+const CONFIG = SINGLE_UPLOAD_CONFIG.wwcc;
 
 type ActionResult = { success: true } | { error: string };
 
@@ -36,14 +39,14 @@ export async function markWwccUploaded(
     async (id, status) => {
       const { error } = await supabase
         .from("onboarding_records")
-        .update({ wwcc_status: status })
+        .update({ [CONFIG.statusField]: status })
         .eq("id", id);
       return { error: error ? { message: error.message } : null };
     },
     async (id, _docType, path) => {
       const { error } = await supabase
         .from("onboarding_records")
-        .update({ wwcc_storage_path: path })
+        .update({ [CONFIG.pathField]: path })
         .eq("id", id);
       return { error: error ? { message: error.message } : null };
     }
@@ -61,7 +64,7 @@ export async function markWwccApplying(recordId: string): Promise<ActionResult> 
   const result = await executeWwccApplying(recordId, async (id, status) => {
     const { error } = await supabase
       .from("onboarding_records")
-      .update({ wwcc_status: status })
+      .update({ [CONFIG.statusField]: status })
       .eq("id", id);
     return { error: error ? { message: error.message } : null };
   });

@@ -2,8 +2,11 @@
 
 import { createServiceClient } from "@/lib/supabase/service";
 import { StorageService } from "@/lib/storage-service";
+import { SINGLE_UPLOAD_CONFIG } from "@/lib/upload-kind-registry";
 import { revalidatePath } from "next/cache";
 import { executeNdisWscApplying, executeNdisWscUploadComplete } from "./ndiswsc-upload-logic";
+
+const CONFIG = SINGLE_UPLOAD_CONFIG.ndiswsc;
 
 type ActionResult = { success: true } | { error: string };
 
@@ -36,14 +39,14 @@ export async function markNdisWscUploaded(
     async (id, status) => {
       const { error } = await supabase
         .from("onboarding_records")
-        .update({ ndiswsc_status: status })
+        .update({ [CONFIG.statusField]: status })
         .eq("id", id);
       return { error: error ? { message: error.message } : null };
     },
     async (id, _docType, path) => {
       const { error } = await supabase
         .from("onboarding_records")
-        .update({ ndiswsc_storage_path: path })
+        .update({ [CONFIG.pathField]: path })
         .eq("id", id);
       return { error: error ? { message: error.message } : null };
     }
@@ -61,7 +64,7 @@ export async function markNdisWscApplying(recordId: string): Promise<ActionResul
   const result = await executeNdisWscApplying(recordId, async (id, status) => {
     const { error } = await supabase
       .from("onboarding_records")
-      .update({ ndiswsc_status: status })
+      .update({ [CONFIG.statusField]: status })
       .eq("id", id);
     return { error: error ? { message: error.message } : null };
   });

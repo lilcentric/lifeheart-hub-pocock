@@ -1,4 +1,10 @@
+import type { OnboardingRecord, OnboardingStatus } from "@/lib/types";
+
 export type EnvelopeType = "bundle_a" | "tna" | "fwa";
+
+// Field updates written to an Onboarding Record when an envelope is signed.
+// Typed so only real OnboardingRecord status columns can appear here.
+type EnvelopeFieldUpdate = Partial<Record<keyof OnboardingRecord, OnboardingStatus>>;
 
 export interface FindRecordResult {
   recordId: string;
@@ -30,18 +36,21 @@ export type WebhookResult =
   | { status: 200 }
   | { status: 400; error: string };
 
-// Combined envelope — set when all onboarding docs are signed at once.
-// bundle_a_envelope_id stores the Employment Bundle envelope ID.
-const COMBINED_ENVELOPE_FIELDS: Record<string, string> = {
-  position_description_status: "completed",
-  code_of_conduct_status: "completed",
-  employment_contract_status: "completed",
-  policies_status: "completed",
-  conflict_of_interest_status: "completed",
-};
-
-const FWA_FIELDS: Record<string, string> = {
-  flexible_working_status: "completed",
+// Field updates applied when each envelope type is fully signed.
+// bundle_a: Employment Bundle — all six signing documents in one envelope.
+// fwa: Flexible Working Agreement — optional envelope sent alongside bundle_a.
+// tna: Training Needs Analysis — handled inline (sequential staff + admin signing).
+const ENVELOPE_FIELD_UPDATES: Partial<Record<EnvelopeType, EnvelopeFieldUpdate>> = {
+  bundle_a: {
+    position_description_status: "completed",
+    code_of_conduct_status: "completed",
+    employment_contract_status: "completed",
+    policies_status: "completed",
+    conflict_of_interest_status: "completed",
+  },
+  fwa: {
+    flexible_working_status: "completed",
+  },
 };
 
 type EnvelopeHandler = (params: {
@@ -55,12 +64,12 @@ type EnvelopeHandler = (params: {
 // adding a handler here is a compile error.
 const ENVELOPE_HANDLERS: Record<EnvelopeType, EnvelopeHandler> = {
   bundle_a: async ({ recordId, envelopeId, deps }) => {
-    await deps.updateRecordFields(recordId, COMBINED_ENVELOPE_FIELDS);
+    await deps.updateRecordFields(recordId, ENVELOPE_FIELD_UPDATES.bundle_a as Record<string, string>);
     await deps.fetchAndStorePdf(recordId, envelopeId, "bundle_a");
   },
 
   fwa: async ({ recordId, deps }) => {
-    await deps.updateRecordFields(recordId, FWA_FIELDS);
+    await deps.updateRecordFields(recordId, ENVELOPE_FIELD_UPDATES.fwa as Record<string, string>);
   },
 
   tna: async ({ recordId, signingEvent, deps }) => {

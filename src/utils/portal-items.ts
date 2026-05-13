@@ -1,5 +1,6 @@
 import type { OnboardingRecord, OnboardingStatus } from "@/lib/types";
 import type { ComplianceDocumentType } from "@/app/actions/compliance-upload-logic";
+import { getPortalStatus } from "@/utils/status-utils";
 
 // ── New typed portal item system ──────────────────────────────────────────────
 
@@ -111,10 +112,7 @@ export function getPortalItems(record: OnboardingRecord, token: string): AnyPort
       kind: "upload",
       key: "ndiswsc_status",
       label: "NDIS Worker Screening Check",
-      status:
-        record.ndiswsc_status === "pending_verification"
-          ? "in_progress"
-          : record.ndiswsc_status,
+      status: getPortalStatus(record.ndiswsc_status),
       uploadVariant: "ndiswsc",
       howToGetItUrl:
         "https://www.service.nsw.gov.au/transaction/apply-for-an-ndis-worker-screening-check",
