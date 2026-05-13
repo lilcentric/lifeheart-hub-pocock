@@ -90,7 +90,10 @@ export async function executeSendAllDocuments(
     });
     if (getResponse.ok) {
       const getData = await getResponse.json();
-      signingUrl = getData?.signers?.[0]?.signing_link ?? null;
+      // Live test (2026-05-13) confirmed the API returns "recipients", not "signers".
+      // "signing_link" is not currently present in GET /v1/envelopes/{id} — signingUrl will
+      // remain null until Annature adds a signing-session endpoint or embeds the link here.
+      signingUrl = getData?.recipients?.[0]?.signing_link ?? null;
     }
   } catch {
     // Non-fatal — staff can still sign via email link; portal button will show "Awaiting link"
@@ -128,7 +131,7 @@ export async function executeSendAllDocuments(
           });
           if (fwaGetResponse.ok) {
             const fwaGetData = await fwaGetResponse.json();
-            fwaSigningUrl = fwaGetData?.signers?.[0]?.signing_link ?? null;
+            fwaSigningUrl = fwaGetData?.recipients?.[0]?.signing_link ?? null;
           }
         } catch {
           // Non-fatal
