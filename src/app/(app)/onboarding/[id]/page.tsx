@@ -4,9 +4,8 @@ import OnboardingForm from "@/components/onboarding/OnboardingForm";
 import NdisWscPanel from "@/components/onboarding/NdisWscPanel";
 import OnboardingLinkPanel from "@/components/onboarding/OnboardingLinkPanel";
 import ArchiveButton from "@/components/onboarding/ArchiveButton";
-import { getActiveTemplates } from "@/lib/contract-templates";
-import { getActivePdCocTemplates } from "@/lib/pd-coc-templates";
-import type { OnboardingRecord, Profile, ContractTemplate, PdCocTemplate, OnboardingDocument } from "@/lib/types";
+import { getActiveEmploymentBundles } from "@/lib/employment-bundle-templates";
+import type { OnboardingRecord, Profile, EmploymentBundleTemplate, OnboardingDocument } from "@/lib/types";
 import UploadedDocumentsPanel from "@/components/onboarding/UploadedDocumentsPanel";
 
 interface Props {
@@ -68,12 +67,9 @@ export default async function EditOnboardingPage({ params }: Props) {
     .maybeSingle();
   const activeToken = rawToken as { id: string } | null;
 
-  const [activeTemplates, activePdCocTemplates] = isAdmin
-    ? await Promise.all([
-        getActiveTemplates().catch(() => [] as ContractTemplate[]),
-        getActivePdCocTemplates().catch(() => [] as PdCocTemplate[]),
-      ])
-    : [[], []] as [ContractTemplate[], PdCocTemplate[]];
+  const employmentBundles: EmploymentBundleTemplate[] = isAdmin
+    ? await getActiveEmploymentBundles().catch(() => [] as EmploymentBundleTemplate[])
+    : [];
 
   let ndiswscDownloadUrl: string | null = null;
   if (record.ndiswsc_storage_path) {
@@ -145,8 +141,7 @@ export default async function EditOnboardingPage({ params }: Props) {
           isAdmin={isAdmin}
           isOfficer={isOfficer}
           activeToken={activeToken ? { id: activeToken.id } : null}
-          contractTemplates={activeTemplates}
-          pdCocTemplates={activePdCocTemplates}
+          employmentBundles={employmentBundles}
         />
 
         <NdisWscPanel

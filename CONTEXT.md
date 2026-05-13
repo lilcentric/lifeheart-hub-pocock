@@ -60,33 +60,35 @@ Every document in the onboarding process belongs to one of three types:
 | **Reference** | Template sent to staff for reading only; no signature required | Staff Handbook, SIL Voyager Staff Manual |
 
 ### Signing Bundle
-Documents are grouped into bundles that are sent together as a single Annature envelope:
+Documents are grouped into envelopes sent at specific trigger points:
 
 | Bundle | Trigger | Documents |
 |---|---|---|
-| **Combined — Immediate** | When onboarding link is sent (admin selects templates in popup) | Position Description & Code of Conduct (one combined template, selected by employment type/version), Employment Contract (selected by employment type/version), Conflict of Interest, Core Policy, High Intensity Policy, Implementing Behaviour Support, and optionally Flexible Working Arrangements (admin opts in per staff member) |
+| **Employment Bundle — Immediate** | When onboarding link is sent (admin selects one Employment Bundle Template in popup) | Position Description & Code of Conduct, Employment Contract, Conflict of Interest, Core Policy, High Intensity Policy, Implementing Behaviour Support — all combined in a single Annature template |
+| **FWA — Immediate (optional)** | When onboarding link is sent, if admin checks the FWA checkbox | Individual Flexible Working Agreement - Overtime / 24hr — a separate Annature envelope sent alongside the Employment Bundle |
 | **TNA — Sequential** | After admin completes their TNA section | Training Needs Analysis (staff signs → admin countersigns) |
 | **Reference — Immediate** | When onboarding link is sent | Staff Handbook, SIL Voyager Staff Manual |
 
 ### Training Needs Analysis
 A collaborative two-step signing document. Admin enters training requirements first. Staff then add their own input via the token link. Annature sends a sequential envelope: staff sign first, the assigned admin countersigns second. Not a legacy field.
 
-### PD & CoC Template
-A versioned Position Description & Code of Conduct template registered in the `pd_coc_templates` table with a corresponding Annature template ID. Sent as a single Annature document (PD and CoC are combined). Admin selects the appropriate version per staff member at link-send time, grouped by employment type (permanent/casual) and version. Structure mirrors `contract_templates`.
-
-### Contract Template
-A versioned employment contract template stored in Supabase Storage and registered in the `contract_templates` table with a corresponding Annature template ID. Six versions are in active simultaneous use:
+### Employment Bundle Template
+A versioned Annature template that combines all core signing documents into a single envelope: Position Description & Code of Conduct, Employment Contract, Conflict of Interest, Core Policy, High Intensity Policy, and Implementing Behaviour Support. Admin selects one Employment Bundle Template per staff member at link-send time. Registered in the `employment_bundle_templates` table. Seven versions are in active simultaneous use:
 
 | Version | Type |
 |---|---|
-| Permanent 2.1 | Permanent |
-| Permanent 2.2 | Permanent |
-| Permanent 2.3 | Permanent |
-| Casual 2.1 | Casual |
-| Casual 2.2 | Casual |
-| Casual 2.3 | Casual |
+| Employment Bundle - Permanent 2.1 | Permanent |
+| Employment Bundle - Permanent 2.2 | Permanent |
+| Employment Bundle - Permanent 2.3 | Permanent |
+| Employment Bundle - Permanent 2.4 | Permanent |
+| Employment Bundle - Casual 2.1 | Casual |
+| Employment Bundle - Casual 2.2 | Casual |
+| Employment Bundle - Casual 2.3 | Casual |
 
-Admin selects the appropriate version per staff member when sending Bundle B. The selected version is recorded on the onboarding record permanently. New versions can be added by an admin without code changes. Retired versions are soft-archived.
+The selected template is recorded on the onboarding record permanently. New versions can be added without code changes. Retired versions are soft-archived. Dropdown in the admin popup groups options by employment type (Permanent / Casual).
+
+### Flexible Working Agreement
+An optional, separate Annature envelope ("Individual Flexible Working Agreement - Overtime / 24hr") that an admin can choose to send alongside the Employment Bundle at link-send time. Triggered by checking the FWA checkbox in the send-link popup. Stored as a separate envelope with its own `fwa_envelope_id` and `fwa_signing_url` on the onboarding record. Completion is tracked via `flexible_working_status` (always shown in the admin record view; defaults to `na` when not sent). Appears as a 14th item in the staff portal checklist, visible only when `flexible_working_opted_in = true`.
 
 ### Staff Details
 Minimal personal information collected from the staff member via the self-service token link. Stored in a `staff_details` table linked to the onboarding record. Payroll details (banking, TFN, tax, super) are captured directly by Xero via the Xero self-setup invitation — they are not stored in this system.

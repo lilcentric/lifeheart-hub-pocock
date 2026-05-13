@@ -1,8 +1,9 @@
 const ANNATURE_BASE = "https://api.annature.com.au";
 
 // ── executeSendAllDocuments ───────────────────────────────────────────────────
-// Sends all onboarding signing documents in a single Annature envelope.
-// Replaces the separate Bundle A + Bundle B flows.
+// Sends the Employment Bundle envelope (single Annature template that contains
+// all core signing documents). Optionally sends a separate FWA envelope when
+// flexibleWorkingOptedIn is true.
 
 export interface SendAllDocumentsDeps {
   fetch: typeof globalThis.fetch;
@@ -10,34 +11,30 @@ export interface SendAllDocumentsDeps {
   annatureKey: string;
   accountId: string;
   roleId: string;
-  // Fixed template IDs (from env vars)
-  conflictOfInterestTemplateId: string;
-  corePolicyTemplateId: string;
-  highIntensityTemplateId: string;
-  behaviourSupportTemplateId: string;
+  // FWA template ID (env var) — only used when flexibleWorkingOptedIn = true
   flexibleWorkingTemplateId: string;
-  // DB lookups
-  getPdCocAnnatureTemplateId: (pdCocTemplateId: string) => Promise<string | null>;
-  getContractAnnatureTemplateId: (contractTemplateId: string) => Promise<string | null>;
-  // Persistence
+  // Look up the Annature template ID for the selected Employment Bundle
+  getEmploymentBundleAnnatureTemplateId: (bundleId: string) => Promise<string | null>;
+  // Persist both envelopes and signing URLs
   persistEnvelopeData: (
     recordId: string,
     envelopeId: string,
     signingUrl: string | null,
-    pdCocTemplateId: string,
-    flexibleWorkingOptedIn: boolean
+    employmentBundleId: string,
+    flexibleWorkingOptedIn: boolean,
+    fwaEnvelopeId: string | null,
+    fwaSigningUrl: string | null
   ) => Promise<{ error: string | null }>;
 }
 
 export type SendAllDocumentsResult =
-  | { envelopeId: string; signingUrl: string | null }
+  | { envelopeId: string; signingUrl: string | null; fwaEnvelopeId: string | null; fwaSigningUrl: string | null }
   | { error: string };
 
 export async function executeSendAllDocuments(
   recordId: string,
   staffEmail: string,
-  pdCocTemplateId: string,
-  contractTemplateId: string,
+  employmentBundleId: string,
   flexibleWorkingOptedIn: boolean,
   deps: SendAllDocumentsDeps
 ): Promise<SendAllDocumentsResult> {
@@ -47,32 +44,15 @@ export async function executeSendAllDocuments(
     annatureKey,
     accountId,
     roleId,
-    conflictOfInterestTemplateId,
-    corePolicyTemplateId,
-    highIntensityTemplateId,
-    behaviourSupportTemplateId,
     flexibleWorkingTemplateId,
-    getPdCocAnnatureTemplateId,
-    getContractAnnatureTemplateId,
+    getEmploymentBundleAnnatureTemplateId,
     persistEnvelopeData,
   } = deps;
 
-  const pdCocAnnId = await getPdCocAnnatureTemplateId(pdCocTemplateId);
-  if (!pdCocAnnId) return { error: "PD & CoC template not found" };
+  const bundleAnnatureTemplateId = await getEmploymentBundleAnnatureTemplateId(employmentBundleId);
+  if (!bundleAnnatureTemplateId) return { error: "Employment Bundle template not found" };
 
-  const contractAnnId = await getContractAnnatureTemplateId(contractTemplateId);
-  if (!contractAnnId) return { error: "Contract template not found" };
-
-  const templateIds = [
-    pdCocAnnId,
-    contractAnnId,
-    conflictOfInterestTemplateId,
-    corePolicyTemplateId,
-    highIntensityTemplateId,
-    behaviourSupportTemplateId,
-    ...(flexibleWorkingOptedIn ? [flexibleWorkingTemplateId] : []),
-  ];
-
+  // POST Employment Bundle envelope
   let postResponse: Response;
   try {
     postResponse = await fetch(`${ANNATURE_BASE}/v1/envelopes`, {
@@ -85,7 +65,7 @@ export async function executeSendAllDocuments(
       body: JSON.stringify({
         account_id: accountId,
         recipients: [{ role_id: roleId, email: staffEmail }],
-        template_ids: templateIds,
+        template_ids: [bundleAnnatureTemplateId],
       }),
     });
   } catch (err) {
@@ -99,8 +79,7 @@ export async function executeSendAllDocuments(
   const postData = await postResponse.json();
   const envelopeId: string = postData.id;
 
-  // Fetch the signing URL for the staff member from the envelope details.
-  // Field name (signers[0].signing_link) must be verified against Annature API docs.
+  // Fetch the signing URL for the staff member from the envelope details (non-fatal).
   let signingUrl: string | null = null;
   try {
     const getResponse = await fetch(`${ANNATURE_BASE}/v1/envelopes/${envelopeId}`, {
@@ -117,99 +96,61 @@ export async function executeSendAllDocuments(
     // Non-fatal — staff can still sign via email link; portal button will show "Awaiting link"
   }
 
+  // Optionally send a separate FWA envelope (non-fatal on failure).
+  let fwaEnvelopeId: string | null = null;
+  let fwaSigningUrl: string | null = null;
+  if (flexibleWorkingOptedIn) {
+    try {
+      const fwaPostResponse = await fetch(`${ANNATURE_BASE}/v1/envelopes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Annature-Id": annatureId,
+          "X-Annature-Key": annatureKey,
+        },
+        body: JSON.stringify({
+          account_id: accountId,
+          recipients: [{ role_id: roleId, email: staffEmail }],
+          template_ids: [flexibleWorkingTemplateId],
+        }),
+      });
+      if (fwaPostResponse.ok) {
+        const fwaPostData = await fwaPostResponse.json();
+        fwaEnvelopeId = fwaPostData.id;
+
+        // Fetch FWA signing URL (non-fatal).
+        try {
+          const fwaGetResponse = await fetch(`${ANNATURE_BASE}/v1/envelopes/${fwaEnvelopeId}`, {
+            headers: {
+              "X-Annature-Id": annatureId,
+              "X-Annature-Key": annatureKey,
+            },
+          });
+          if (fwaGetResponse.ok) {
+            const fwaGetData = await fwaGetResponse.json();
+            fwaSigningUrl = fwaGetData?.signers?.[0]?.signing_link ?? null;
+          }
+        } catch {
+          // Non-fatal
+        }
+      }
+    } catch {
+      // Non-fatal — bundle already sent
+    }
+  }
+
   const { error } = await persistEnvelopeData(
     recordId,
     envelopeId,
     signingUrl,
-    pdCocTemplateId,
-    flexibleWorkingOptedIn
+    employmentBundleId,
+    flexibleWorkingOptedIn,
+    fwaEnvelopeId,
+    fwaSigningUrl
   );
   if (error) return { error };
 
-  return { envelopeId, signingUrl };
-}
-
-
-export interface SendBundleBDeps {
-  fetch: typeof globalThis.fetch;
-  annatureId: string;
-  annatureKey: string;
-  accountId: string;
-  roleId: string;
-  flexibleWorkingTemplateId: string;
-  corePolicyTemplateId: string;
-  highIntensityTemplateId: string;
-  behaviourSupportTemplateId: string;
-  getContractAnnatureTemplateId: (contractTemplateId: string) => Promise<string | null>;
-  persistEnvelopeId: (
-    recordId: string,
-    envelopeId: string
-  ) => Promise<{ error: string | null }>;
-}
-
-export type SendBundleBResult =
-  | { envelopeId: string }
-  | { error: string };
-
-export async function executeSendBundleB(
-  recordId: string,
-  contractTemplateId: string,
-  staffEmail: string,
-  deps: SendBundleBDeps
-): Promise<SendBundleBResult> {
-  const {
-    fetch,
-    annatureId,
-    annatureKey,
-    accountId,
-    roleId,
-    flexibleWorkingTemplateId,
-    corePolicyTemplateId,
-    highIntensityTemplateId,
-    behaviourSupportTemplateId,
-    getContractAnnatureTemplateId,
-    persistEnvelopeId,
-  } = deps;
-
-  const contractAnnatureTemplateId = await getContractAnnatureTemplateId(contractTemplateId);
-  if (!contractAnnatureTemplateId) return { error: "Contract template not found" };
-
-  let response: Response;
-  try {
-    response = await fetch(`${ANNATURE_BASE}/v1/envelopes`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Annature-Id": annatureId,
-        "X-Annature-Key": annatureKey,
-      },
-      body: JSON.stringify({
-        account_id: accountId,
-        recipients: [{ role_id: roleId, email: staffEmail }],
-        template_ids: [
-          contractAnnatureTemplateId,
-          flexibleWorkingTemplateId,
-          corePolicyTemplateId,
-          highIntensityTemplateId,
-          behaviourSupportTemplateId,
-        ],
-      }),
-    });
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : "Network error" };
-  }
-
-  if (!response.ok) {
-    return { error: `Annature API error: ${response.status}` };
-  }
-
-  const data = await response.json();
-  const envelopeId: string = data.id;
-
-  const { error } = await persistEnvelopeId(recordId, envelopeId);
-  if (error) return { error };
-
-  return { envelopeId };
+  return { envelopeId, signingUrl, fwaEnvelopeId, fwaSigningUrl };
 }
 
 export interface SendBundleADeps {

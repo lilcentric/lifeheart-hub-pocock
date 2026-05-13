@@ -2,61 +2,39 @@
 -- Migration 005: Onboarding portal overhaul
 -- ============================================================
 
--- New table for Position Description & Code of Conduct templates.
--- Mirrors contract_templates structure exactly.
-create table pd_coc_templates (
-  id              uuid primary key default gen_random_uuid(),
-  name            text not null,
-  employment_type text not null
-    check (employment_type in ('permanent', 'casual')),
-  version         text not null,
-  template_id     text not null,
-  archived        boolean not null default false,
-  created_at      timestamptz not null default now()
-);
+-- Rename contract_templates → employment_bundle_templates
+alter table contract_templates rename to employment_bundle_templates;
 
-alter table pd_coc_templates enable row level security;
-
-create policy "PdCocTemplates: authenticated read"
-  on pd_coc_templates for select
-  using (auth.role() = 'authenticated');
-
-create policy "PdCocTemplates: admin insert"
-  on pd_coc_templates for insert
-  with check (
-    exists (select 1 from profiles where id = auth.uid() and role = 'admin')
-  );
-
-create policy "PdCocTemplates: admin update"
-  on pd_coc_templates for update
-  using (
-    exists (select 1 from profiles where id = auth.uid() and role = 'admin')
-  );
-
--- Seed placeholder templates — replace template_id values with real
--- Annature template IDs before going live.
-insert into pd_coc_templates (name, employment_type, version, template_id) values
-  ('PD & Code of Conduct — Permanent', 'permanent', '1.0', 'ANNATURE_PD_COC_PERM_PLACEHOLDER'),
-  ('PD & Code of Conduct — Casual',    'casual',    '1.0', 'ANNATURE_PD_COC_CAS_PLACEHOLDER');
+-- Seed the 7 Employment Bundle templates (replace IDs before go-live)
+insert into employment_bundle_templates (name, employment_type, version, annature_template_id) values
+  ('Employment Bundle - Permanent 2.1', 'permanent', '2.1', 'PLACEHOLDER_PERM_2_1'),
+  ('Employment Bundle - Permanent 2.2', 'permanent', '2.2', 'PLACEHOLDER_PERM_2_2'),
+  ('Employment Bundle - Permanent 2.3', 'permanent', '2.3', 'PLACEHOLDER_PERM_2_3'),
+  ('Employment Bundle - Permanent 2.4', 'permanent', '2.4', 'PLACEHOLDER_PERM_2_4'),
+  ('Employment Bundle - Casual 2.1',    'casual',    '2.1', 'PLACEHOLDER_CAS_2_1'),
+  ('Employment Bundle - Casual 2.2',    'casual',    '2.2', 'PLACEHOLDER_CAS_2_2'),
+  ('Employment Bundle - Casual 2.3',    'casual',    '2.3', 'PLACEHOLDER_CAS_2_3');
 
 -- ============================================================
--- New columns on onboarding_records
+-- onboarding_records changes
 -- ============================================================
 
+-- Rename contract_template_id → employment_bundle_id
+alter table onboarding_records rename column contract_template_id to employment_bundle_id;
+
+-- Drop the now-unused Bundle B envelope column
+alter table onboarding_records drop column if exists bundle_b_envelope_id;
+
+-- New columns
 alter table onboarding_records
-  -- Which PD & CoC template was selected at link-send time
-  add column if not exists pd_coc_template_id            uuid references pd_coc_templates(id),
-  -- Whether Flexible Working Arrangements was included in the combined envelope
-  add column if not exists flexible_working_opted_in     boolean not null default false,
-  -- Annature hosted signing URL (from GET /v1/envelopes/{id}) for the staff portal button
   add column if not exists signing_url                   text,
-  -- Combined status for Core Policy + High Intensity + Implementing Behaviour Support
+  add column if not exists flexible_working_opted_in     boolean not null default false,
+  add column if not exists fwa_envelope_id               text,
+  add column if not exists fwa_signing_url               text,
+  add column if not exists flexible_working_status       onboarding_status not null default 'na',
   add column if not exists policies_status               onboarding_status not null default 'not_completed',
-  -- Additional Training Certificates (new staff upload item)
   add column if not exists additional_training_status    onboarding_status not null default 'not_completed',
   add column if not exists additional_training_storage_path text;
 
--- Note: bundle_a_envelope_id is reused to store the combined envelope ID.
--- The webhook continues to look it up by this column name.
--- bundle_b_envelope_id is kept in place; it will no longer be written for
--- new records but existing data is preserved.
+-- Note: bundle_a_envelope_id stores the Employment Bundle envelope ID.
+-- bundle_b_envelope_id is dropped. No pd_coc_templates table is created.

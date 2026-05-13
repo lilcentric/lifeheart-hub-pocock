@@ -5,11 +5,16 @@ function makeDeps() {
   return {
     generateToken: vi.fn().mockResolvedValue({ token: "tok-001", error: null }),
     sendEmail: vi.fn().mockResolvedValue({ error: null }),
-    sendAllDocuments: vi.fn().mockResolvedValue({ envelopeId: "env-001", signingUrl: "https://sign.example.com/abc" }),
+    sendAllDocuments: vi.fn().mockResolvedValue({
+      envelopeId: "env-001",
+      signingUrl: "https://sign.example.com/abc",
+      fwaEnvelopeId: null,
+      fwaSigningUrl: null,
+    }),
   };
 }
 
-const DEFAULT_ARGS = ["LF-HDC-00001", "staff@example.com", "pdcoc-uuid", "contract-uuid", false] as const;
+const DEFAULT_ARGS = ["LF-HDC-00001", "staff@example.com", "bundle-uuid", false] as const;
 
 describe("executeSendOnboardingLink", () => {
   it("succeeds when all steps complete", async () => {
@@ -19,7 +24,7 @@ describe("executeSendOnboardingLink", () => {
     expect(deps.generateToken).toHaveBeenCalledWith("LF-HDC-00001");
     expect(deps.sendEmail).toHaveBeenCalledWith("staff@example.com", "tok-001");
     expect(deps.sendAllDocuments).toHaveBeenCalledWith(
-      "LF-HDC-00001", "staff@example.com", "pdcoc-uuid", "contract-uuid", false
+      "LF-HDC-00001", "staff@example.com", "bundle-uuid", false
     );
     expect(result).toEqual({ success: true });
   });
@@ -27,11 +32,11 @@ describe("executeSendOnboardingLink", () => {
   it("passes flexibleWorkingOptedIn=true through to sendAllDocuments", async () => {
     const deps = makeDeps();
     await executeSendOnboardingLink(
-      "LF-HDC-00001", "staff@example.com", "pdcoc-uuid", "contract-uuid", true, deps
+      "LF-HDC-00001", "staff@example.com", "bundle-uuid", true, deps
     );
 
     expect(deps.sendAllDocuments).toHaveBeenCalledWith(
-      "LF-HDC-00001", "staff@example.com", "pdcoc-uuid", "contract-uuid", true
+      "LF-HDC-00001", "staff@example.com", "bundle-uuid", true
     );
   });
 

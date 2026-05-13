@@ -4,10 +4,9 @@ export interface SendOnboardingLinkDeps {
   sendAllDocuments: (
     recordId: string,
     staffEmail: string,
-    pdCocTemplateId: string,
-    contractTemplateId: string,
+    employmentBundleId: string,
     flexibleWorkingOptedIn: boolean
-  ) => Promise<{ envelopeId: string; signingUrl: string | null } | { error: string }>;
+  ) => Promise<{ envelopeId: string; signingUrl: string | null; fwaEnvelopeId: string | null; fwaSigningUrl: string | null } | { error: string }>;
 }
 
 export type SendOnboardingLinkResult =
@@ -17,8 +16,7 @@ export type SendOnboardingLinkResult =
 export async function executeSendOnboardingLink(
   recordId: string,
   staffEmail: string,
-  pdCocTemplateId: string,
-  contractTemplateId: string,
+  employmentBundleId: string,
   flexibleWorkingOptedIn: boolean,
   deps: SendOnboardingLinkDeps
 ): Promise<SendOnboardingLinkResult> {
@@ -31,8 +29,7 @@ export async function executeSendOnboardingLink(
   const annatureResult = await deps.sendAllDocuments(
     recordId,
     staffEmail,
-    pdCocTemplateId,
-    contractTemplateId,
+    employmentBundleId,
     flexibleWorkingOptedIn
   );
   if ("error" in annatureResult) {
