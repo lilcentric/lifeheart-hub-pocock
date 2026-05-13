@@ -5,34 +5,16 @@ type UpdateStatus = (
   status: OnboardingStatus
 ) => Promise<{ error: { message: string } | null }>;
 
-type RecordUpload = (
-  recordId: string,
-  documentType: string,
-  path: string
-) => Promise<{ error: { message: string } | null }>;
-
 type Result = { success: true } | { error: string };
 
+// Sets ndiswsc_status to in_progress when a staff member indicates they are
+// applying for their NDISWSC via Service NSW (before they have a document to upload).
+// File upload (which also sets in_progress) is handled by recordUpload.
 export async function executeNdisWscApplying(
   recordId: string,
   updateStatus: UpdateStatus
 ): Promise<Result> {
   const { error } = await updateStatus(recordId, "in_progress");
   if (error) return { error: error.message };
-  return { success: true };
-}
-
-export async function executeNdisWscUploadComplete(
-  recordId: string,
-  path: string,
-  updateStatus: UpdateStatus,
-  recordUpload: RecordUpload
-): Promise<Result> {
-  const uploadResult = await recordUpload(recordId, "ndiswsc", path);
-  if (uploadResult.error) return { error: uploadResult.error.message };
-
-  const statusResult = await updateStatus(recordId, "in_progress");
-  if (statusResult.error) return { error: statusResult.error.message };
-
   return { success: true };
 }

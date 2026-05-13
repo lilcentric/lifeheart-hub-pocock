@@ -117,8 +117,8 @@ Documents staff submit via the self-service token link. Each has an associated s
 | Item | Upload type | Conditional logic | Status milestones |
 |---|---|---|---|
 | Identity & Right to Work | Single upload zone | None — 100 points ID and right to work collected together | `not_completed` → `completed` |
-| WWCC | Single upload | Upload dropzone + "Don't have one? Here's how to get it →" link (Service NSW) | `not_completed` → `completed` |
-| NDIS Worker Screening Check | Single upload | Upload dropzone + "Don't have one? Here's how to get it →" link (Service NSW, Lifeheart ID: `4-IBS0H1Z`) | `not_completed` → `in_progress` → `pending_verification` → `completed` |
+| WWCC | Single upload | Upload dropzone + "Don't have one? Here's how to get it →" link (Service NSW) | `not_completed` → `in_progress` (staff clicks "I'm applying" before obtaining WWCC) → `completed` (on document upload) |
+| NDIS Worker Screening Check | Single upload | Upload dropzone + "Don't have one? Here's how to get it →" link (Service NSW, Lifeheart ID: `4-IBS0H1Z`) | `not_completed` → `in_progress` → `pending_verification` → `completed`. The first two transitions are staff-initiated (clicking "I'm applying" or uploading a document). `in_progress → pending_verification` and `pending_verification → completed` are admin-only — see `canTransitionNdisWsc` in `src/utils/ndiswsc-transitions.ts`. |
 | NDIS Worker Orientation Module | Single upload | None | `not_completed` → `completed` |
 | Additional Training Certificates | Single upload | None — staff upload any additional training certificates | `not_completed` → `completed` |
 | Qualifications | Multiple uploads | None — any number of certificates, endorsements, licences | `not_completed` → `completed` |

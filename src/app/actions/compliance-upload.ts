@@ -4,10 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { withRole } from "@/lib/auth-guard";
 import { StorageService } from "@/lib/storage-service";
-import {
-  executeComplianceUpload,
-  type ComplianceDocumentType,
-} from "./compliance-upload-logic";
+import { recordUpload, type UploadKind } from "@/lib/record-upload";
+
+export type ComplianceDocumentType =
+  | "identity_right_to_work"
+  | "ndis_orientation"
+  | "car_insurance"
+  | "additional_training";
 
 type ActionResult = { success: true } | { error: string };
 
@@ -36,20 +39,16 @@ export async function recordComplianceUpload(
   return withRole("officer", async () => {
     const supabase = await createClient();
 
-    const result = await executeComplianceUpload(recordId, documentType, path, {
-      recordPath: async (id, pathField, storagePath) => {
+    const result = await recordUpload(recordId, documentType as UploadKind, path, "", {
+      updateRecord: async (id, updates) => {
         const { error } = await supabase
           .from("onboarding_records")
-          .update({ [pathField]: storagePath } as never)
+          .update(updates as never)
           .eq("id", id);
-        return { error: error ? { message: error.message } : null };
+        return { error: error?.message ?? null };
       },
-      updateStatus: async (id, statusField, status) => {
-        const { error } = await supabase
-          .from("onboarding_records")
-          .update({ [statusField]: status })
-          .eq("id", id);
-        return { error: error ? { message: error.message } : null };
+      insertDocument: async () => {
+        throw new Error("insertDocument called for single-file upload kind");
       },
     });
 
