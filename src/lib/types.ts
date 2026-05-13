@@ -29,15 +29,17 @@ export type ContractTemplate = {
 
 export type NewContractTemplate = Omit<ContractTemplate, "id" | "archived" | "created_at">;
 
-export type PdCocTemplate = {
+export type EmploymentBundleTemplate = {
   id: string;
   name: string;
   employment_type: EmploymentType;
   version: string;
-  template_id: string;
+  annature_template_id: string;
   archived: boolean;
   created_at: string;
 };
+
+export type NewEmploymentBundleTemplate = Omit<EmploymentBundleTemplate, "id" | "archived" | "created_at">;
 
 export type OnboardingRecord = {
   id: string;
@@ -86,7 +88,7 @@ export type OnboardingRecord = {
   archived_by: string | null;
 
   // Phase 2 metadata
-  contract_template_id: string | null;
+  employment_bundle_id: string | null;
   xero_employee_id: string | null;
 
   // Phase 2 storage paths (single-file uploads)
@@ -99,10 +101,19 @@ export type OnboardingRecord = {
   // Phase 2 Annature envelope IDs
   bundle_a_envelope_id: string | null;
   tna_envelope_id: string | null;
-  bundle_b_envelope_id: string | null;
 
   // Phase 2: TNA status
   tna_status: OnboardingStatus;
+
+  // Overhaul: employment bundle send
+  flexible_working_opted_in: boolean;
+  signing_url: string | null;
+  fwa_envelope_id: string | null;
+  fwa_signing_url: string | null;
+  flexible_working_status: OnboardingStatus;
+  policies_status: OnboardingStatus;
+  additional_training_status: OnboardingStatus;
+  additional_training_storage_path: string | null;
 
   // Original compliance field (migration)
   screening_checks_status: OnboardingStatus;
@@ -198,10 +209,10 @@ export interface Database {
         Update: Partial<Omit<OnboardingDocument, "id" | "created_at">>;
         Relationships: [];
       };
-      pd_coc_templates: {
-        Row: PdCocTemplate;
-        Insert: Omit<PdCocTemplate, "id" | "archived" | "created_at">;
-        Update: Partial<Omit<PdCocTemplate, "id" | "created_at">>;
+      employment_bundle_templates: {
+        Row: EmploymentBundleTemplate;
+        Insert: Omit<EmploymentBundleTemplate, "id" | "archived" | "created_at">;
+        Update: Partial<EmploymentBundleTemplate>;
         Relationships: [];
       };
     };

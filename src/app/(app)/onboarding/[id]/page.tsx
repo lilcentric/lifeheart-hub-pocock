@@ -4,9 +4,8 @@ import OnboardingForm from "@/components/onboarding/OnboardingForm";
 import NdisWscPanel from "@/components/onboarding/NdisWscPanel";
 import OnboardingLinkPanel from "@/components/onboarding/OnboardingLinkPanel";
 import ArchiveButton from "@/components/onboarding/ArchiveButton";
-import BundleBPanel from "@/components/onboarding/BundleBPanel";
-import { getActiveTemplates } from "@/lib/contract-templates";
-import type { OnboardingRecord, Profile, ContractTemplate, OnboardingDocument } from "@/lib/types";
+import { getActiveEmploymentBundles } from "@/lib/employment-bundle-templates";
+import type { OnboardingRecord, Profile, EmploymentBundleTemplate, OnboardingDocument } from "@/lib/types";
 import UploadedDocumentsPanel from "@/components/onboarding/UploadedDocumentsPanel";
 
 interface Props {
@@ -58,19 +57,18 @@ export default async function EditOnboardingPage({ params }: Props) {
   const isAdmin = profile?.role === "admin";
   const isOfficer = profile?.role === "officer";
 
-  // Fetch the latest active (non-revoked) token for this record (includes email for Bundle B)
   const { data: rawToken } = await supabase
     .from("onboarding_tokens")
-    .select("id, staff_email")
+    .select("id")
     .eq("record_id", id)
     .is("revoked_at", null)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  const activeToken = rawToken as { id: string; staff_email: string } | null;
+  const activeToken = rawToken as { id: string } | null;
 
-  const activeTemplates = isAdmin
-    ? await getActiveTemplates().catch(() => [] as ContractTemplate[])
+  const employmentBundles: EmploymentBundleTemplate[] = isAdmin
+    ? await getActiveEmploymentBundles().catch(() => [] as EmploymentBundleTemplate[])
     : [];
 
   let ndiswscDownloadUrl: string | null = null;
@@ -143,15 +141,8 @@ export default async function EditOnboardingPage({ params }: Props) {
           isAdmin={isAdmin}
           isOfficer={isOfficer}
           activeToken={activeToken ? { id: activeToken.id } : null}
+          employmentBundles={employmentBundles}
         />
-
-        {isAdmin && activeToken && activeTemplates.length > 0 && (
-          <BundleBPanel
-            recordId={id}
-            staffEmail={activeToken.staff_email}
-            templates={activeTemplates}
-          />
-        )}
 
         <NdisWscPanel
           recordId={id}

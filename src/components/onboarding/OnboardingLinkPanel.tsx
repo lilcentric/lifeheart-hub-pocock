@@ -7,6 +7,7 @@ import {
   revokeToken,
   resendOnboardingLink,
 } from "@/app/actions/onboarding-link";
+import type { EmploymentBundleTemplate } from "@/lib/types";
 
 interface ActiveToken {
   id: string;
@@ -17,6 +18,7 @@ interface Props {
   isAdmin: boolean;
   isOfficer: boolean;
   activeToken?: ActiveToken | null;
+  employmentBundles: EmploymentBundleTemplate[];
 }
 
 type ModalMode = "send" | "resend" | "revoke" | null;
@@ -26,9 +28,12 @@ export default function OnboardingLinkPanel({
   isAdmin,
   isOfficer,
   activeToken,
+  employmentBundles,
 }: Props) {
   const [mode, setMode] = useState<ModalMode>(null);
   const [email, setEmail] = useState("");
+  const [selectedBundleId, setSelectedBundleId] = useState("");
+  const [flexibleWorkingOptedIn, setFlexibleWorkingOptedIn] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -37,9 +42,14 @@ export default function OnboardingLinkPanel({
   const canSend = isAdmin || isOfficer;
   const hasActiveToken = !!activeToken && !tokenRevoked;
 
+  const permanentBundles = employmentBundles.filter((t) => t.employment_type === "permanent");
+  const casualBundles = employmentBundles.filter((t) => t.employment_type === "casual");
+
   function openModal(m: ModalMode) {
     setMode(m);
     setEmail("");
+    setSelectedBundleId("");
+    setFlexibleWorkingOptedIn(false);
     setError(null);
   }
 
@@ -53,15 +63,37 @@ export default function OnboardingLinkPanel({
       setError("Email address is required.");
       return;
     }
+    if (mode === "send") {
+      if (!selectedBundleId) {
+        setError("Please select an Employment Bundle template.");
+        return;
+      }
+    }
+
     setPending(true);
     setError(null);
-    const action = mode === "resend" ? resendOnboardingLink : sendOnboardingLink;
-    const result = await action(recordId, email.trim());
+
+    let result;
+    if (mode === "resend") {
+      result = await resendOnboardingLink(recordId, email.trim());
+    } else {
+      result = await sendOnboardingLink(
+        recordId,
+        email.trim(),
+        selectedBundleId,
+        flexibleWorkingOptedIn
+      );
+    }
+
     setPending(false);
     if ("error" in result) {
       setError(result.error);
     } else {
-      setSuccess(mode === "resend" ? "New link sent." : "Onboarding link sent.");
+      if ("annatureWarning" in result && result.annatureWarning) {
+        setSuccess(`Link sent. Note: Annature documents could not be sent automatically — ${result.annatureWarning}`);
+      } else {
+        setSuccess(mode === "resend" ? "New link sent." : "Onboarding link sent.");
+      }
       closeModal();
     }
   }
@@ -133,26 +165,78 @@ export default function OnboardingLinkPanel({
       <Dialog.Root open={mode === "send" || mode === "resend"} onOpenChange={(open) => !open && closeModal()}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/40" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl p-6 w-full max-w-sm space-y-4">
+          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl p-6 w-full max-w-md space-y-4">
             <Dialog.Title className="text-base font-semibold text-gray-900">
               {mode === "resend" ? "Resend onboarding link" : "Send onboarding link"}
             </Dialog.Title>
             <Dialog.Description className="text-sm text-gray-500">
-              Enter the staff member&apos;s email address to dispatch the link.
+              {mode === "resend"
+                ? "Enter the staff member's email address to send a new link."
+                : "Enter the staff member's details. All signing documents will be sent immediately."}
             </Dialog.Description>
 
-            <div className="space-y-1">
-              <label htmlFor="email-input" className="text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <input
-                id="email-input"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="staff@example.com"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label htmlFor="email-input" className="text-sm font-medium text-gray-700">
+                  Email address
+                </label>
+                <input
+                  id="email-input"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="staff@example.com"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {mode === "send" && (
+                <>
+                  <div className="space-y-1">
+                    <label htmlFor="bundle-select" className="text-sm font-medium text-gray-700">
+                      Employment Bundle
+                    </label>
+                    <select
+                      id="bundle-select"
+                      value={selectedBundleId}
+                      onChange={(e) => setSelectedBundleId(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select bundle…</option>
+                      {permanentBundles.length > 0 && (
+                        <optgroup label="Permanent">
+                          {permanentBundles.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name} (v{t.version})
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                      {casualBundles.length > 0 && (
+                        <optgroup label="Casual">
+                          {casualBundles.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name} (v{t.version})
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                    </select>
+                  </div>
+
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={flexibleWorkingOptedIn}
+                      onChange={(e) => setFlexibleWorkingOptedIn(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">
+                      Include Flexible Working Arrangements
+                    </span>
+                  </label>
+                </>
+              )}
             </div>
 
             {error && (
