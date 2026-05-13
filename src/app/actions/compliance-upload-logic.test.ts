@@ -25,7 +25,7 @@ describe("executeComplianceUpload", () => {
     expect(result).toEqual({ success: true });
     expect(mockRecordPath).toHaveBeenCalledWith(
       "LF-HDC-00001",
-      "identity_right_to_work",
+      "identity_right_to_work_storage_path",
       "onboarding/LF-HDC-00001/identity_right_to_work/passport.pdf"
     );
     expect(mockUpdateStatus).toHaveBeenCalledWith(
@@ -46,7 +46,7 @@ describe("executeComplianceUpload", () => {
     expect(result).toEqual({ success: true });
     expect(mockRecordPath).toHaveBeenCalledWith(
       "LF-HDC-00002",
-      "ndis_orientation",
+      "ndis_orientation_storage_path",
       "onboarding/LF-HDC-00002/ndis_orientation/certificate.pdf"
     );
     expect(mockUpdateStatus).toHaveBeenCalledWith(
@@ -67,7 +67,7 @@ describe("executeComplianceUpload", () => {
     expect(result).toEqual({ success: true });
     expect(mockRecordPath).toHaveBeenCalledWith(
       "LF-HDC-00003",
-      "car_insurance",
+      "car_insurance_storage_path",
       "onboarding/LF-HDC-00003/car_insurance/policy.pdf"
     );
     expect(mockUpdateStatus).toHaveBeenCalledWith(
@@ -88,7 +88,7 @@ describe("executeComplianceUpload", () => {
     expect(result).toEqual({ success: true });
     expect(mockRecordPath).toHaveBeenCalledWith(
       "LF-HDC-00004",
-      "additional_training",
+      "additional_training_storage_path",
       "onboarding/LF-HDC-00004/additional_training/cert.pdf"
     );
     expect(mockUpdateStatus).toHaveBeenCalledWith(

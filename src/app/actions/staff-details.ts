@@ -1,7 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/service";
-import { validateToken } from "@/lib/token-service";
+import { resolveStaffToken } from "@/lib/token-service";
 
 export interface StaffDetailsInput {
   full_name: string;
@@ -24,23 +24,7 @@ export async function submitStaffDetails(
 ): Promise<ActionResult> {
   const supabase = createServiceClient();
 
-  const record = await validateToken(token, {
-    lookupToken: (t) =>
-      supabase
-        .from("onboarding_tokens")
-        .select("*")
-        .eq("id", t)
-        .maybeSingle()
-        .then((r) => ({ data: r.data, error: r.error })),
-    getRecord: (id) =>
-      supabase
-        .from("onboarding_records")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle()
-        .then((r) => ({ data: r.data, error: r.error })),
-  });
-
+  const record = await resolveStaffToken(token);
   if (!record) return { error: "Invalid or expired link" };
 
   const nameParts = input.full_name.trim().split(/\s+/);

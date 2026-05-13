@@ -1,5 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/service";
-import { validateToken } from "@/lib/token-service";
+import { resolveStaffToken } from "@/lib/token-service";
 import { getPortalItems } from "@/utils/portal-items";
 import type { AnyPortalItem, SignPortalItem, UploadPortalItem, MultiUploadPortalItem } from "@/utils/portal-items";
 import StatusBadge from "@/components/onboarding/StatusBadge";
@@ -22,22 +22,7 @@ export default async function StaffPortalPage({ params }: Props) {
   const { token } = await params;
   const supabase = createServiceClient();
 
-  const record = await validateToken(token, {
-    lookupToken: (t: string) =>
-      supabase
-        .from("onboarding_tokens")
-        .select("*")
-        .eq("id", t)
-        .maybeSingle()
-        .then((res) => ({ data: res.data as never, error: res.error })),
-    getRecord: (recordId: string) =>
-      supabase
-        .from("onboarding_records")
-        .select("*")
-        .eq("id", recordId)
-        .maybeSingle()
-        .then((res) => ({ data: res.data as never, error: res.error })),
-  });
+  const record = await resolveStaffToken(token);
 
   if (!record) {
     return <TokenErrorPage />;

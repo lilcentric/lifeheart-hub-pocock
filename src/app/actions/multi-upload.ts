@@ -1,39 +1,19 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/service";
-import { validateToken } from "@/lib/token-service";
+import { resolveStaffToken } from "@/lib/token-service";
 import { StorageService } from "@/lib/storage-service";
 import { recordMultiUploadAndUpdateStatus } from "./multi-upload-logic";
 import { revalidatePath } from "next/cache";
 
 const DOCUMENTS_BUCKET = "documents";
 
-async function resolveRecord(token: string) {
-  const supabase = createServiceClient();
-  return validateToken(token, {
-    lookupToken: (t: string) =>
-      supabase
-        .from("onboarding_tokens")
-        .select("*")
-        .eq("id", t)
-        .maybeSingle()
-        .then((res) => ({ data: res.data as never, error: res.error })),
-    getRecord: (recordId: string) =>
-      supabase
-        .from("onboarding_records")
-        .select("*")
-        .eq("id", recordId)
-        .maybeSingle()
-        .then((res) => ({ data: res.data as never, error: res.error })),
-  });
-}
-
 export async function getStaffUploadUrl(
   token: string,
   documentType: string,
   filename: string
 ): Promise<{ uploadUrl: string; storagePath: string } | { error: string }> {
-  const record = await resolveRecord(token);
+  const record = await resolveStaffToken(token);
   if (!record) return { error: "Invalid or expired link" };
 
   const supabase = createServiceClient();
@@ -60,7 +40,7 @@ export async function recordStaffUpload(
   storagePath: string,
   filename: string
 ): Promise<{ success: true } | { error: string }> {
-  const record = await resolveRecord(token);
+  const record = await resolveStaffToken(token);
   if (!record) return { error: "Invalid or expired link" };
 
   const supabase = createServiceClient();

@@ -1,4 +1,5 @@
 import type { OnboardingStatus, OnboardingRecord } from "@/lib/types";
+import { ALL_STATUS_FIELDS, type StatusField } from "@/lib/onboarding-status-fields";
 
 interface StatusMeta {
   label: string;
@@ -71,54 +72,6 @@ export function isDocumentField(field: keyof OnboardingRecord): boolean {
   return DOCUMENT_FIELDS.includes(field);
 }
 
-type StatusField = keyof Pick<
-  OnboardingRecord,
-  | "job_application_status"
-  | "interview_status"
-  | "reference_checks_status"
-  | "cv_status"
-  | "position_description_status"
-  | "employment_contract_status"
-  | "code_of_conduct_status"
-  | "employee_details_form_status"
-  | "conflict_of_interest_status"
-  | "ndiswsc_status"
-  | "training_status"
-  | "orientation_induction_status"
-  | "identity_right_to_work_status"
-  | "wwcc_status"
-  | "ndis_orientation_status"
-  | "qualifications_status"
-  | "first_aid_cpr_status"
-  | "car_insurance_status"
-  | "training_needs_status"
-  | "uniforms_status"
-  | "tna_status"
->;
-
-const ALL_STATUS_FIELDS: StatusField[] = [
-  "job_application_status",
-  "interview_status",
-  "reference_checks_status",
-  "cv_status",
-  "position_description_status",
-  "employment_contract_status",
-  "code_of_conduct_status",
-  "employee_details_form_status",
-  "conflict_of_interest_status",
-  "ndiswsc_status",
-  "training_status",
-  "orientation_induction_status",
-  "identity_right_to_work_status",
-  "wwcc_status",
-  "ndis_orientation_status",
-  "qualifications_status",
-  "first_aid_cpr_status",
-  "car_insurance_status",
-  "training_needs_status",
-  "uniforms_status",
-  "tna_status",
-];
 
 export function deriveOverallStatus(
   record: Pick<OnboardingRecord, StatusField>
