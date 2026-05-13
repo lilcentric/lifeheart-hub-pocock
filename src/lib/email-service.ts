@@ -1,6 +1,10 @@
 import { Resend } from "resend";
 
-const FROM = "Lifeheart Hub <noreply@lifeheart.com.au>";
+// The local-part is arbitrary; what Resend checks is the domain. Default
+// matches the only domain currently verified in the Resend account
+// (noreply.lifeheart.com.au). Override via RESEND_FROM once the apex
+// lifeheart.com.au is also verified.
+const DEFAULT_FROM = "Lifeheart Hub <onboarding@noreply.lifeheart.com.au>";
 
 export const EmailService = {
   async sendOnboardingLink(to: string, staffName: string, token: string): Promise<void> {
@@ -12,7 +16,7 @@ export const EmailService = {
     const onboardingUrl = `${appUrl}/onboard/${token}`;
 
     const { error } = await resend.emails.send({
-      from: FROM,
+      from: process.env.RESEND_FROM ?? DEFAULT_FROM,
       to,
       subject: "Your Lifeheart onboarding link",
       html: `
