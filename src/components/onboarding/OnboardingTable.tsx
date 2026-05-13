@@ -47,12 +47,16 @@ export default function OnboardingTable({
         id: key,
         accessorKey: key,
         header: label,
-        cell: ({ getValue }) => (
-          <StatusBadge
-            status={getValue() as OnboardingStatus}
-            legacy={LEGACY_STATUS_FIELDS.has(key)}
-          />
-        ),
+        cell: ({ getValue }) => {
+          const raw = getValue() as OnboardingStatus | null | undefined;
+          if (raw == null) return <span className="text-sm text-gray-400">—</span>;
+          return (
+            <StatusBadge
+              status={raw}
+              legacy={LEGACY_STATUS_FIELDS.has(key)}
+            />
+          );
+        },
       })
     );
 
