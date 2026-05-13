@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getActiveTemplates } from "@/lib/contract-templates";
-import ContractTemplatesClient from "./ContractTemplatesClient";
+import { getActiveEmploymentBundles } from "@/lib/employment-bundle-templates";
+import EmploymentBundlesClient from "./EmploymentBundlesClient";
 import type { Profile } from "@/lib/types";
 
-export default async function ContractTemplatesPage() {
+export default async function EmploymentBundlesPage() {
   const supabase = await createClient();
 
   const {
@@ -21,19 +21,19 @@ export default async function ContractTemplatesPage() {
 
   if (profile?.role !== "admin") redirect("/dashboard");
 
-  const templates = await getActiveTemplates();
+  const bundles = await getActiveEmploymentBundles();
 
   return (
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-gray-900">
-          Contract Templates
+          Employment Bundle Templates
         </h1>
         <p className="text-sm text-gray-500 mt-0.5">
           Manage Annature template versions
         </p>
       </div>
-      <ContractTemplatesClient templates={templates} />
+      <EmploymentBundlesClient bundles={bundles} />
     </div>
   );
 }

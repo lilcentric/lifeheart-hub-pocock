@@ -15,7 +15,7 @@ interface Props {
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "officer", "viewer"] },
   { href: "/onboarding", label: "Onboarding", icon: Users, roles: ["admin", "officer", "viewer"] },
-  { href: "/admin/contract-templates", label: "Contract Templates", icon: FileText, roles: ["admin"] },
+  { href: "/admin/employment-bundles", label: "Employment Bundles", icon: FileText, roles: ["admin"] },
 ];
 
 export default function Sidebar({ userEmail, userName, userRole }: Props) {

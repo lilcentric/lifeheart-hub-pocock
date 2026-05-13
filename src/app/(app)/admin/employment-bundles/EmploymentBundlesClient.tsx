@@ -6,10 +6,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
-import { newTemplateSchema } from "@/lib/contract-templates";
-import type { ContractTemplate, EmploymentType } from "@/lib/types";
+import { newEmploymentBundleSchema } from "@/lib/employment-bundle-templates";
+import type { EmploymentBundleTemplate, EmploymentType } from "@/lib/types";
 
-type FormValues = z.infer<typeof newTemplateSchema>;
+type FormValues = z.infer<typeof newEmploymentBundleSchema>;
 
 const EMPLOYMENT_TYPES: { value: EmploymentType; label: string }[] = [
   { value: "permanent", label: "Permanent" },
@@ -17,12 +17,12 @@ const EMPLOYMENT_TYPES: { value: EmploymentType; label: string }[] = [
 ];
 
 interface Props {
-  templates: ContractTemplate[];
+  bundles: EmploymentBundleTemplate[];
 }
 
-export default function ContractTemplatesClient({ templates: initial }: Props) {
+export default function EmploymentBundlesClient({ bundles: initial }: Props) {
   const router = useRouter();
-  const [templates, setTemplates] = useState(initial);
+  const [bundles, setBundles] = useState(initial);
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -31,18 +31,18 @@ export default function ContractTemplatesClient({ templates: initial }: Props) {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
-    resolver: zodResolver(newTemplateSchema),
+    resolver: zodResolver(newEmploymentBundleSchema),
     defaultValues: { employment_type: "permanent" },
   });
 
-  const permanent = templates.filter((t) => t.employment_type === "permanent");
-  const casual = templates.filter((t) => t.employment_type === "casual");
+  const permanent = bundles.filter((t) => t.employment_type === "permanent");
+  const casual = bundles.filter((t) => t.employment_type === "casual");
 
   async function onSubmit(values: FormValues) {
     setError(null);
     const supabase = createClient();
     const { data, error: sbError } = await supabase
-      .from("contract_templates")
+      .from("employment_bundle_templates")
       .insert(values)
       .select()
       .single();
@@ -50,7 +50,7 @@ export default function ContractTemplatesClient({ templates: initial }: Props) {
       setError(sbError.message);
       return;
     }
-    setTemplates((prev) => [data as ContractTemplate, ...prev]);
+    setBundles((prev) => [data as EmploymentBundleTemplate, ...prev]);
     reset();
     router.refresh();
   }
@@ -59,14 +59,14 @@ export default function ContractTemplatesClient({ templates: initial }: Props) {
     setError(null);
     const supabase = createClient();
     const { error: sbError } = await supabase
-      .from("contract_templates")
+      .from("employment_bundle_templates")
       .update({ archived: true })
       .eq("id", id);
     if (sbError) {
       setError(sbError.message);
       return;
     }
-    setTemplates((prev) => prev.filter((t) => t.id !== id));
+    setBundles((prev) => prev.filter((t) => t.id !== id));
     router.refresh();
   }
 
@@ -78,7 +78,6 @@ export default function ContractTemplatesClient({ templates: initial }: Props) {
         </p>
       )}
 
-      {/* Template list */}
       {[
         { label: "Permanent", items: permanent },
         { label: "Casual", items: casual },
@@ -86,7 +85,7 @@ export default function ContractTemplatesClient({ templates: initial }: Props) {
         <section key={label}>
           <h2 className="text-sm font-semibold text-gray-700 mb-3">{label}</h2>
           {items.length === 0 ? (
-            <p className="text-sm text-gray-400">No active {label.toLowerCase()} templates.</p>
+            <p className="text-sm text-gray-400">No active {label.toLowerCase()} bundles.</p>
           ) : (
             <div className="border border-gray-200 rounded-md divide-y divide-gray-100">
               {items.map((t) => (
@@ -113,10 +112,9 @@ export default function ContractTemplatesClient({ templates: initial }: Props) {
         </section>
       ))}
 
-      {/* Add template form */}
       <section>
         <h2 className="text-sm font-semibold text-gray-700 mb-3">
-          Add template
+          Add bundle template
         </h2>
         <form
           onSubmit={handleSubmit(onSubmit)}
@@ -130,7 +128,7 @@ export default function ContractTemplatesClient({ templates: initial }: Props) {
               <input
                 {...register("name")}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                placeholder="e.g. Permanent Full-Time Contract v3"
+                placeholder="e.g. Employment Bundle - Permanent 2.5"
               />
               {errors.name && (
                 <p className="text-xs text-red-600 mt-1">{errors.name.message}</p>
@@ -160,7 +158,7 @@ export default function ContractTemplatesClient({ templates: initial }: Props) {
               <input
                 {...register("version")}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                placeholder="e.g. 3.0"
+                placeholder="e.g. 2.5"
               />
               {errors.version && (
                 <p className="text-xs text-red-600 mt-1">{errors.version.message}</p>
@@ -174,7 +172,7 @@ export default function ContractTemplatesClient({ templates: initial }: Props) {
               <input
                 {...register("annature_template_id")}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                placeholder="e.g. ann_perm_ft_v3"
+                placeholder="e.g. ann_perm_bundle_2_5"
               />
               {errors.annature_template_id && (
                 <p className="text-xs text-red-600 mt-1">
@@ -189,7 +187,7 @@ export default function ContractTemplatesClient({ templates: initial }: Props) {
             disabled={isSubmitting}
             className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50 transition-colors"
           >
-            {isSubmitting ? "Adding…" : "Add template"}
+            {isSubmitting ? "Adding…" : "Add bundle template"}
           </button>
         </form>
       </section>
