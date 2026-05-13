@@ -89,7 +89,7 @@ export async function sendOnboardingLink(
         annatureId: requireEnv("ANNATURE_ID"),
         annatureKey: requireEnv("ANNATURE_KEY"),
         accountId: requireEnv("ANNATURE_ACCOUNT_ID"),
-        roleId: requireEnv("ANNATURE_ROLE_ID"),
+        roleId: requireEnv("ANNATURE_FWA_ROLE_ID"),
         flexibleWorkingTemplateId: requireEnv("ANNATURE_FLEXIBLE_WORKING_TEMPLATE_ID"),
         getEmploymentBundleAnnatureTemplateId: async (id) => {
           const { data } = await supabase
