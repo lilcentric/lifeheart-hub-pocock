@@ -46,7 +46,8 @@ export async function sendOnboardingLink(
     try {
       await EmailService.sendOnboardingLink(email, staffName, token);
     } catch (e) {
-      return { error: `Token generated but email failed: ${(e as Error).message}` };
+      await TokenService.revoke(token).catch(() => {});
+      return { error: `Email failed: ${(e as Error).message}` };
     }
 
     // Send all signing documents via Annature. Failure is a warning — token and
@@ -143,7 +144,8 @@ export async function resendOnboardingLink(
     try {
       await EmailService.sendOnboardingLink(email, staffName, token);
     } catch (e) {
-      return { error: `Token generated but email failed: ${(e as Error).message}` };
+      await TokenService.revoke(token).catch(() => {});
+      return { error: `Email failed: ${(e as Error).message}` };
     }
 
     revalidatePath(`/onboarding/${recordId}`);

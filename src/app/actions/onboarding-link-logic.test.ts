@@ -4,6 +4,7 @@ import { executeSendOnboardingLink } from "./onboarding-link-logic";
 function makeDeps() {
   return {
     generateToken: vi.fn().mockResolvedValue({ token: "tok-001", error: null }),
+    revokeToken: vi.fn().mockResolvedValue(undefined),
     sendEmail: vi.fn().mockResolvedValue({ error: null }),
     sendAllDocuments: vi.fn().mockResolvedValue({
       envelopeId: "env-001",
@@ -69,6 +70,7 @@ describe("executeSendOnboardingLink", () => {
     const result = await executeSendOnboardingLink(...DEFAULT_ARGS, deps);
 
     expect(result).toEqual({ error: "Resend rate limit" });
+    expect(deps.revokeToken).toHaveBeenCalledWith("tok-001");
     expect(deps.sendAllDocuments).not.toHaveBeenCalled();
   });
 });

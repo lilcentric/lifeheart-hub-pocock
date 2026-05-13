@@ -1,5 +1,6 @@
 export interface SendOnboardingLinkDeps {
   generateToken: (recordId: string) => Promise<{ token: string; error: null } | { token: null; error: string }>;
+  revokeToken: (token: string) => Promise<void>;
   sendEmail: (staffEmail: string, token: string) => Promise<{ error: string | null }>;
   sendAllDocuments: (
     recordId: string,
@@ -24,7 +25,10 @@ export async function executeSendOnboardingLink(
   if (tokenResult.token === null) return { error: tokenResult.error };
 
   const emailResult = await deps.sendEmail(staffEmail, tokenResult.token);
-  if (emailResult.error) return { error: emailResult.error };
+  if (emailResult.error) {
+    await deps.revokeToken(tokenResult.token);
+    return { error: emailResult.error };
+  }
 
   const annatureResult = await deps.sendAllDocuments(
     recordId,
