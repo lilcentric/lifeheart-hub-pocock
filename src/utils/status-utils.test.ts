@@ -15,6 +15,21 @@ describe("getStatusMeta", () => {
     expect(meta.label).toBeDefined();
     expect(meta.className).toBeDefined();
   });
+
+  it("returns a fallback (not undefined) for null at runtime", () => {
+    // DB columns added by later migrations can be null for rows that predate
+    // the migration, even though OnboardingStatus doesn't include null.
+    const meta = getStatusMeta(null as never);
+    expect(meta).toBeDefined();
+    expect(meta.label).toBeDefined();
+    expect(meta.className).toBeDefined();
+  });
+
+  it("returns a fallback for an unknown string at runtime", () => {
+    const meta = getStatusMeta("not_a_real_status" as never);
+    expect(meta).toBeDefined();
+    expect(meta.label).toBe("not_a_real_status");
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -38,7 +38,7 @@ const STATUS_META: Record<OnboardingStatus, StatusMeta> = {
 };
 
 export function getStatusMeta(status: OnboardingStatus): StatusMeta {
-  return STATUS_META[status];
+  return STATUS_META[status] ?? { label: String(status ?? "Unknown"), className: "bg-gray-100 text-gray-500" };
 }
 
 // Status values valid for document fields (support not_received / not_signed)
