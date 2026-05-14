@@ -37,6 +37,10 @@ vi.mock("@/lib/token-service", () => ({
   resolveStaffToken: mockResolveStaffToken,
 }));
 
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+}));
+
 import { submitStaffDetails } from "./staff-details";
 
 // ---------------------------------------------------------------------------

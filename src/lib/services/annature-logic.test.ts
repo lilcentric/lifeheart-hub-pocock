@@ -89,7 +89,9 @@ describe("executeSendBundleA", () => {
 
 // ── executeSendAllDocuments ───────────────────────────────────────────────────
 
-const ALL_ROLE_ID = "role-all-docs";
+const ALL_STAFF_ROLE_ID = "staff-role-all-docs";
+const ALL_DIRECTOR_ROLE_ID = "director-role-all-docs";
+const STAFF_NAME = "Test Staff";
 const FLEXIBLE_WORKING_TMPL = "tmpl-fw-001";
 const BUNDLE_ANNATURE_TMPL = "ann-bundle-001";
 
@@ -102,7 +104,8 @@ function makeAllDocsDeps(
     annatureId: "test-public-key",
     annatureKey: "test-private-key",
     accountId: ACCOUNT_ID,
-    roleId: ALL_ROLE_ID,
+    staffRoleId: ALL_STAFF_ROLE_ID,
+    directorRoleId: ALL_DIRECTOR_ROLE_ID,
     flexibleWorkingTemplateId: FLEXIBLE_WORKING_TMPL,
     getEmploymentBundleAnnatureTemplateId: vi.fn().mockResolvedValue(bundleAnnId),
     persistEnvelopeData: vi.fn().mockResolvedValue({ error: null }),
@@ -127,37 +130,40 @@ describe("executeSendAllDocuments", () => {
     const deps = makeAllDocsDeps(mockFetch, null);
 
     const result = await executeSendAllDocuments(
-      "LF-HDC-00020", "staff@example.com", "bundle-uuid", false, deps
+      "LF-HDC-00020", "staff@example.com", STAFF_NAME, "bundle-uuid", false, deps
     );
 
     expect(result).toEqual({ error: "Employment Bundle template not found" });
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it("POSTs to /v1/envelopes with single template array (just the bundle ID)", async () => {
+  it("POSTs to the template URL with correct recipients", async () => {
     const mockFetch = makeSuccessFetch();
     const deps = makeAllDocsDeps(mockFetch);
 
     await executeSendAllDocuments(
-      "LF-HDC-00020", "staff@example.com", "bundle-uuid", false, deps
+      "LF-HDC-00020", "staff@example.com", STAFF_NAME, "bundle-uuid", false, deps
     );
 
     const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://api.annature.com.au/v1/envelopes");
+    expect(url).toBe(`https://api.annature.com.au/v1/templates/${BUNDLE_ANNATURE_TMPL}/use`);
     const body = JSON.parse(init.body as string);
-    expect(body.template_ids).toEqual([BUNDLE_ANNATURE_TMPL]);
-    expect(body.template_ids).toHaveLength(1);
+    expect(body.account_id).toBe(ACCOUNT_ID);
+    expect(body.recipients).toEqual([
+      { role_id: ALL_DIRECTOR_ROLE_ID },
+      { role_id: ALL_STAFF_ROLE_ID, name: STAFF_NAME, email: "staff@example.com" },
+    ]);
   });
 
   it("returns error and does not persist when POST fails", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 422 });
+    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 422, text: async () => "Unprocessable entity" });
     const deps = makeAllDocsDeps(mockFetch);
 
     const result = await executeSendAllDocuments(
-      "LF-HDC-00020", "staff@example.com", "bundle-uuid", false, deps
+      "LF-HDC-00020", "staff@example.com", STAFF_NAME, "bundle-uuid", false, deps
     );
 
-    expect(result).toEqual({ error: "Annature API error: 422" });
+    expect(result).toMatchObject({ error: expect.stringContaining("422") });
     expect(deps.persistEnvelopeData).not.toHaveBeenCalled();
   });
 
@@ -168,7 +174,7 @@ describe("executeSendAllDocuments", () => {
     const deps = makeAllDocsDeps(mockFetch);
 
     const result = await executeSendAllDocuments(
-      "LF-HDC-00020", "staff@example.com", "bundle-uuid", false, deps
+      "LF-HDC-00020", "staff@example.com", STAFF_NAME, "bundle-uuid", false, deps
     );
 
     expect(deps.persistEnvelopeData).toHaveBeenCalledWith(
@@ -182,7 +188,7 @@ describe("executeSendAllDocuments", () => {
     const deps = makeAllDocsDeps(mockFetch);
 
     const result = await executeSendAllDocuments(
-      "LF-HDC-00020", "staff@example.com", "bundle-uuid", false, deps
+      "LF-HDC-00020", "staff@example.com", STAFF_NAME, "bundle-uuid", false, deps
     );
 
     // Only 2 fetch calls: POST + GET for bundle (no FWA)
@@ -212,14 +218,17 @@ describe("executeSendAllDocuments", () => {
     const deps = makeAllDocsDeps(mockFetch);
 
     const result = await executeSendAllDocuments(
-      "LF-HDC-00020", "staff@example.com", "bundle-uuid", true, deps
+      "LF-HDC-00020", "staff@example.com", STAFF_NAME, "bundle-uuid", true, deps
     );
 
-    // FWA POST should use fwa template ID
+    // FWA POST should use fwa template URL
     const fwaPostCall = mockFetch.mock.calls[2] as [string, RequestInit];
-    expect(fwaPostCall[0]).toBe("https://api.annature.com.au/v1/envelopes");
+    expect(fwaPostCall[0]).toBe(`https://api.annature.com.au/v1/templates/${FLEXIBLE_WORKING_TMPL}/use`);
     const fwaBody = JSON.parse(fwaPostCall[1].body as string);
-    expect(fwaBody.template_ids).toEqual([FLEXIBLE_WORKING_TMPL]);
+    expect(fwaBody.recipients).toEqual([
+      { role_id: ALL_DIRECTOR_ROLE_ID },
+      { role_id: ALL_STAFF_ROLE_ID, name: STAFF_NAME, email: "staff@example.com" },
+    ]);
 
     expect(deps.persistEnvelopeData).toHaveBeenCalledWith(
       "LF-HDC-00020", "env-bundle-001", "https://sign.annature.com.au/bundle",
@@ -245,7 +254,7 @@ describe("executeSendAllDocuments", () => {
     const deps = makeAllDocsDeps(mockFetch);
 
     const result = await executeSendAllDocuments(
-      "LF-HDC-00020", "staff@example.com", "bundle-uuid", true, deps
+      "LF-HDC-00020", "staff@example.com", STAFF_NAME, "bundle-uuid", true, deps
     );
 
     expect(deps.persistEnvelopeData).toHaveBeenCalledWith(
@@ -265,7 +274,7 @@ describe("executeSendAllDocuments", () => {
     const deps = makeAllDocsDeps(mockFetch);
 
     const result = await executeSendAllDocuments(
-      "LF-HDC-00020", "staff@example.com", "bundle-uuid", false, deps
+      "LF-HDC-00020", "staff@example.com", STAFF_NAME, "bundle-uuid", false, deps
     );
 
     expect(deps.persistEnvelopeData).toHaveBeenCalledWith(

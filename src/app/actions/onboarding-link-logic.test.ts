@@ -28,7 +28,7 @@ describe("executeSendOnboardingLink", () => {
     expect(deps.getStaffName).toHaveBeenCalledWith("LF-HDC-00001");
     expect(deps.sendEmail).toHaveBeenCalledWith("staff@example.com", "Jane Smith", "tok-001");
     expect(deps.sendAllDocuments).toHaveBeenCalledWith(
-      "LF-HDC-00001", "staff@example.com", "bundle-uuid", false
+      "LF-HDC-00001", "staff@example.com", "Jane Smith", "bundle-uuid", false
     );
     expect(deps.createXeroEmployee).toHaveBeenCalledWith("Jane Smith", "staff@example.com");
     expect(deps.scheduleXeroInvite).toHaveBeenCalledWith("xero-emp-001");
@@ -40,7 +40,7 @@ describe("executeSendOnboardingLink", () => {
     await executeSendOnboardingLink("LF-HDC-00001", "staff@example.com", "bundle-uuid", true, deps);
 
     expect(deps.sendAllDocuments).toHaveBeenCalledWith(
-      "LF-HDC-00001", "staff@example.com", "bundle-uuid", true
+      "LF-HDC-00001", "staff@example.com", "Jane Smith", "bundle-uuid", true
     );
   });
 
