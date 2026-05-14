@@ -56,18 +56,18 @@ const baseRecord: OnboardingRecord = {
 };
 
 describe("getPortalItems", () => {
-  it("returns exactly 13 items when flexible_working_opted_in is false", () => {
+  it("returns exactly 12 items when flexible_working_opted_in is false", () => {
     const items = getPortalItems(baseRecord, "tok-abc");
+    expect(items).toHaveLength(12);
+  });
+
+  it("returns exactly 13 items when flexible_working_opted_in is true", () => {
+    const record = { ...baseRecord, flexible_working_opted_in: true, flexible_working_status: "not_completed" as const };
+    const items = getPortalItems(record, "tok-abc");
     expect(items).toHaveLength(13);
   });
 
-  it("returns exactly 14 items when flexible_working_opted_in is true", () => {
-    const record = { ...baseRecord, flexible_working_opted_in: true, flexible_working_status: "not_completed" as const };
-    const items = getPortalItems(record, "tok-abc");
-    expect(items).toHaveLength(14);
-  });
-
-  it("item 14 is flexible_working_status with kind=sign and uses fwa_signing_url", () => {
+  it("item 4 (index 3) is flexible_working_status with kind=sign and uses fwa_signing_url", () => {
     const record = {
       ...baseRecord,
       flexible_working_opted_in: true,
@@ -75,7 +75,7 @@ describe("getPortalItems", () => {
       fwa_signing_url: "https://sign.annature.com.au/fwa-123",
     };
     const items = getPortalItems(record, "tok-abc");
-    const fwaItem = items[13];
+    const fwaItem = items[3];
     expect(fwaItem).toMatchObject({
       key: "flexible_working_status",
       kind: "sign",
@@ -88,11 +88,11 @@ describe("getPortalItems", () => {
   it("flexible_working_status item has signingUrl=null when fwa_signing_url is null", () => {
     const record = { ...baseRecord, flexible_working_opted_in: true, flexible_working_status: "not_completed" as const };
     const items = getPortalItems(record, "tok-abc");
-    const fwaItem = items[13];
+    const fwaItem = items[3];
     expect((fwaItem as { signingUrl: string | null }).signingUrl).toBeNull();
   });
 
-  it("returns items in the correct order (first 13)", () => {
+  it("returns items in the correct order", () => {
     const items = getPortalItems(baseRecord, "tok-abc");
     const keys = items.map((i) => i.key);
     expect(keys).toEqual([
@@ -100,7 +100,6 @@ describe("getPortalItems", () => {
       "position_description_status",
       "employment_contract_status",
       "policies_status",
-      "conflict_of_interest_status",
       "identity_right_to_work_status",
       "car_insurance_status",
       "wwcc_status",
@@ -121,12 +120,12 @@ describe("getPortalItems", () => {
     });
   });
 
-  it("sign items carry signingUrl from record (4 sign items when opted_in=false)", () => {
+  it("sign items carry signingUrl from record (3 sign items when opted_in=false)", () => {
     const record = { ...baseRecord, signing_url: "https://sign.annature.com.au/xyz" };
     const items = getPortalItems(record, "tok-abc");
     const signItems = items.filter((i) => i.kind === "sign");
 
-    expect(signItems).toHaveLength(4);
+    expect(signItems).toHaveLength(3);
     for (const item of signItems) {
       expect((item as { signingUrl: string | null }).signingUrl).toBe(
         "https://sign.annature.com.au/xyz"
@@ -162,10 +161,10 @@ describe("getPortalItems", () => {
     expect((car as { howToGetItUrl?: string }).howToGetItUrl).toBeUndefined();
   });
 
-  it("additional_training_status appears at position 11 (index 10)", () => {
+  it("additional_training_status appears at position 10 (index 9)", () => {
     const items = getPortalItems(baseRecord, "tok-abc");
-    expect(items[10].key).toBe("additional_training_status");
-    expect(items[10].label).toBe("Additional Training Certificates");
+    expect(items[9].key).toBe("additional_training_status");
+    expect(items[9].label).toBe("Additional Training Certificates");
   });
 
   it("ndiswsc_status maps pending_verification to in_progress", () => {
@@ -191,6 +190,30 @@ describe("getPortalItems", () => {
     const items = getPortalItems(baseRecord, "tok-abc");
     const keys = items.map((i) => i.key);
     expect(keys).not.toContain("training_status");
+  });
+
+  it("merged row label is 'Position Description, Code of Conduct & Conflict of Interest' and status comes from position_description_status", () => {
+    const record = { ...baseRecord, position_description_status: "completed" as const };
+    const items = getPortalItems(record, "tok-abc");
+    const merged = items.find((i) => i.key === "position_description_status");
+    expect(merged).toMatchObject({
+      label: "Position Description, Code of Conduct & Conflict of Interest",
+      status: "completed",
+      kind: "sign",
+    });
+  });
+
+  it("FWA at index 3 sits between Employment Contract (index 2) and Policies (index 4)", () => {
+    const record = { ...baseRecord, flexible_working_opted_in: true, flexible_working_status: "not_completed" as const };
+    const items = getPortalItems(record, "tok-abc");
+    expect(items[2].key).toBe("employment_contract_status");
+    expect(items[3].key).toBe("flexible_working_status");
+    expect(items[4].key).toBe("policies_status");
+  });
+
+  it("does not include conflict_of_interest_status as a separate portal row", () => {
+    const items = getPortalItems(baseRecord, "tok-abc");
+    expect(items.map((i) => i.key)).not.toContain("conflict_of_interest_status");
   });
 
   it("qualifications and first_aid_cpr are kind=multi-upload", () => {

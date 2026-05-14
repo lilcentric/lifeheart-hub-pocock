@@ -2,6 +2,7 @@
 
 import { createServiceClient } from "@/lib/supabase/service";
 import { resolveStaffToken } from "@/lib/token-service";
+import { revalidatePath } from "next/cache";
 
 export interface StaffDetailsInput {
   full_name: string;
@@ -60,5 +61,6 @@ export async function submitStaffDetails(
 
   if (updateError) return { error: (updateError as { message: string }).message };
 
+  revalidatePath(`/onboard/${token}`);
   return { success: true };
 }

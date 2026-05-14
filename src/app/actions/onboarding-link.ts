@@ -78,10 +78,34 @@ export async function sendOnboardingLink(
         sendEmail: async (staffEmail, staffName, token) => {
           try {
             await EmailService.sendOnboardingLink(staffEmail, staffName, token);
-            return { error: null };
           } catch (e) {
             return { error: (e as Error).message };
           }
+
+          // Non-fatal: send reference documents in a separate email
+          try {
+            const serviceClient = createServiceClient();
+            const [handbookResult, silResult] = await Promise.all([
+              serviceClient.storage
+                .from("staff-docs")
+                .createSignedUrl("reference-docs/staff-handbook.pdf", 60 * 60 * 24 * 30),
+              serviceClient.storage
+                .from("staff-docs")
+                .createSignedUrl("reference-docs/sil-voyager-staff-manual.pdf", 60 * 60 * 24 * 30),
+            ]);
+            if (handbookResult.data?.signedUrl && silResult.data?.signedUrl) {
+              await EmailService.sendReferenceDocuments(
+                staffEmail,
+                staffName,
+                handbookResult.data.signedUrl,
+                silResult.data.signedUrl
+              );
+            }
+          } catch {
+            // Reference docs email is best-effort; do not block onboarding send
+          }
+
+          return { error: null };
         },
 
         sendAllDocuments: async (recId, staffEmail, staffName, bundleId, fwOptedIn) => {
