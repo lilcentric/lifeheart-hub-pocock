@@ -156,14 +156,18 @@ describe("executeSendAllDocuments", () => {
   });
 
   it("returns error and does not persist when POST fails", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 422, text: async () => "Unprocessable entity" });
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      text: async () => "Unprocessable Entity",
+    });
     const deps = makeAllDocsDeps(mockFetch);
 
     const result = await executeSendAllDocuments(
       "LF-HDC-00020", "staff@example.com", STAFF_NAME, "bundle-uuid", false, deps
     );
 
-    expect(result).toMatchObject({ error: expect.stringContaining("422") });
+    expect(result).toEqual({ error: "Annature API error: 422 — Unprocessable Entity" });
     expect(deps.persistEnvelopeData).not.toHaveBeenCalled();
   });
 
