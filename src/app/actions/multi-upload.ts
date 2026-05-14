@@ -3,7 +3,7 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { resolveStaffToken } from "@/lib/token-service";
 import { StorageService } from "@/lib/storage-service";
-import { recordMultiUploadAndUpdateStatus } from "./multi-upload-logic";
+import { recordUpload, type UploadKind } from "@/lib/record-upload";
 import { revalidatePath } from "next/cache";
 
 const DOCUMENTS_BUCKET = "documents";
@@ -44,25 +44,19 @@ export async function recordStaffUpload(
   if (!record) return { error: "Invalid or expired link" };
 
   const supabase = createServiceClient();
-  const storage = supabase.storage.from(DOCUMENTS_BUCKET);
+  const bucket = supabase.storage.from(DOCUMENTS_BUCKET);
 
-  const result = await recordMultiUploadAndUpdateStatus(
-    record.id,
-    documentType,
-    storagePath,
-    filename,
-    {
-      recordDocument: (rid, dtype, path, fname) =>
-        new StorageService(supabase, storage).recordMultiUpload(rid, dtype, path, fname),
-      setStatus: async (rid, statusField, status) => {
-        const { error } = await supabase
-          .from("onboarding_records")
-          .update({ [statusField]: status } as never)
-          .eq("id", rid);
-        if (error) throw new Error((error as { message: string }).message);
-      },
-    }
-  );
+  const result = await recordUpload(record.id, documentType as UploadKind, storagePath, filename, {
+    updateRecord: async (id, updates) => {
+      const { error } = await supabase
+        .from("onboarding_records")
+        .update(updates as never)
+        .eq("id", id);
+      return { error: error?.message ?? null };
+    },
+    insertDocument: (rid, dtype, path, fname) =>
+      new StorageService(supabase, bucket).recordMultiUpload(rid, dtype, path, fname),
+  });
 
   if ("success" in result) {
     revalidatePath(`/onboard/${token}`);
