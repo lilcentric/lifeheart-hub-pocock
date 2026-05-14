@@ -5,6 +5,7 @@ export interface SendOnboardingLinkDeps {
   sendAllDocuments: (
     recordId: string,
     staffEmail: string,
+    staffName: string,
     employmentBundleId: string,
     flexibleWorkingOptedIn: boolean
   ) => Promise<{ envelopeId: string; signingUrl: string | null; fwaEnvelopeId: string | null; fwaSigningUrl: string | null } | { error: string }>;
@@ -35,6 +36,7 @@ export async function executeSendOnboardingLink(
   const annatureResult = await deps.sendAllDocuments(
     recordId,
     staffEmail,
+    staffName,
     employmentBundleId,
     flexibleWorkingOptedIn
   );

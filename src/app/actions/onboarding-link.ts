@@ -84,13 +84,14 @@ export async function sendOnboardingLink(
           }
         },
 
-        sendAllDocuments: async (recId, staffEmail, bundleId, fwOptedIn) => {
-          return executeSendAllDocuments(recId, staffEmail, bundleId, fwOptedIn, {
+        sendAllDocuments: async (recId, staffEmail, staffName, bundleId, fwOptedIn) => {
+          return executeSendAllDocuments(recId, staffEmail, staffName, bundleId, fwOptedIn, {
             fetch: globalThis.fetch,
             annatureId: requireEnv("ANNATURE_ID"),
             annatureKey: requireEnv("ANNATURE_KEY"),
             accountId: requireEnv("ANNATURE_ACCOUNT_ID"),
-            roleId: requireEnv("ANNATURE_FWA_ROLE_ID"),
+            staffRoleId: requireEnv("ANNATURE_STAFF_ROLE_ID"),
+            directorRoleId: requireEnv("ANNATURE_DIRECTOR_ROLE_ID"),
             flexibleWorkingTemplateId: requireEnv("ANNATURE_FLEXIBLE_WORKING_TEMPLATE_ID"),
             getEmploymentBundleAnnatureTemplateId: async (id) => {
               const { data } = await supabase

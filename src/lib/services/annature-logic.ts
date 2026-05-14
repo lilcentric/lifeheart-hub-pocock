@@ -10,7 +10,10 @@ export interface SendAllDocumentsDeps {
   annatureId: string;
   annatureKey: string;
   accountId: string;
-  roleId: string;
+  // Role ID for the "New Staff" signer slot across employment bundle templates
+  staffRoleId: string;
+  // Role ID for the "Director" countersignatory slot (preset name/email in template)
+  directorRoleId: string;
   // FWA template ID (env var) — only used when flexibleWorkingOptedIn = true
   flexibleWorkingTemplateId: string;
   // Look up the Annature template ID for the selected Employment Bundle
@@ -34,6 +37,7 @@ export type SendAllDocumentsResult =
 export async function executeSendAllDocuments(
   recordId: string,
   staffEmail: string,
+  staffName: string,
   employmentBundleId: string,
   flexibleWorkingOptedIn: boolean,
   deps: SendAllDocumentsDeps
@@ -43,7 +47,8 @@ export async function executeSendAllDocuments(
     annatureId,
     annatureKey,
     accountId,
-    roleId,
+    staffRoleId,
+    directorRoleId,
     flexibleWorkingTemplateId,
     getEmploymentBundleAnnatureTemplateId,
     persistEnvelopeData,
@@ -52,10 +57,12 @@ export async function executeSendAllDocuments(
   const bundleAnnatureTemplateId = await getEmploymentBundleAnnatureTemplateId(employmentBundleId);
   if (!bundleAnnatureTemplateId) return { error: "Employment Bundle template not found" };
 
-  // POST Employment Bundle envelope
+  // POST Employment Bundle envelope via the template endpoint.
+  // Each template has two roles: Director (countersignatory, preset defaults) and
+  // New Staff (signer, needs staff name + email). Both must be included.
   let postResponse: Response;
   try {
-    postResponse = await fetch(`${ANNATURE_BASE}/v1/envelopes`, {
+    postResponse = await fetch(`${ANNATURE_BASE}/v1/templates/${bundleAnnatureTemplateId}/use`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -64,8 +71,10 @@ export async function executeSendAllDocuments(
       },
       body: JSON.stringify({
         account_id: accountId,
-        recipients: [{ role_id: roleId, email: staffEmail }],
-        template_ids: [bundleAnnatureTemplateId],
+        recipients: [
+          { role_id: directorRoleId },
+          { role_id: staffRoleId, name: staffName, email: staffEmail },
+        ],
       }),
     });
   } catch (err) {
@@ -73,7 +82,8 @@ export async function executeSendAllDocuments(
   }
 
   if (!postResponse.ok) {
-    return { error: `Annature API error: ${postResponse.status}` };
+    const errBody = await postResponse.text().catch(() => "(unreadable)");
+    return { error: `Annature API error: ${postResponse.status} — ${errBody}` };
   }
 
   const postData = await postResponse.json();
@@ -104,7 +114,7 @@ export async function executeSendAllDocuments(
   let fwaSigningUrl: string | null = null;
   if (flexibleWorkingOptedIn) {
     try {
-      const fwaPostResponse = await fetch(`${ANNATURE_BASE}/v1/envelopes`, {
+      const fwaPostResponse = await fetch(`${ANNATURE_BASE}/v1/templates/${flexibleWorkingTemplateId}/use`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -113,8 +123,10 @@ export async function executeSendAllDocuments(
         },
         body: JSON.stringify({
           account_id: accountId,
-          recipients: [{ role_id: roleId, email: staffEmail }],
-          template_ids: [flexibleWorkingTemplateId],
+          recipients: [
+            { role_id: directorRoleId },
+            { role_id: staffRoleId, name: staffName, email: staffEmail },
+          ],
         }),
       });
       if (fwaPostResponse.ok) {
