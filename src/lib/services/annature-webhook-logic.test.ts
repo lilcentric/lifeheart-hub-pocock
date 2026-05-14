@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { executeAnnatureWebhook } from "./annature-webhook-logic";
+import { executeAnnatureWebhook, BUNDLE_A_UPDATES } from "./annature-webhook-logic";
 import type { AnnatureWebhookDeps } from "./annature-webhook-logic";
 
 // ---------------------------------------------------------------------------
@@ -42,6 +42,7 @@ describe("executeAnnatureWebhook — HMAC validation", () => {
     expect(result).toEqual({ status: 400, error: "Invalid signature" });
     expect(deps.findRecordByEnvelopeId).not.toHaveBeenCalled();
     expect(deps.updateRecordFields).not.toHaveBeenCalled();
+    expect(deps.fetchAndStorePdf).not.toHaveBeenCalled();
   });
 
   it("passes rawBody, signature, and secret to validateHmac", async () => {
@@ -142,6 +143,23 @@ describe("executeAnnatureWebhook — FWA envelope", () => {
     await executeAnnatureWebhook(makePayload("env-fwa"), "valid-sig", deps);
 
     expect(deps.fetchAndStorePdf).not.toHaveBeenCalled();
+  });
+
+  it("does not write any Bundle A status fields", async () => {
+    const deps = makeDeps({
+      findRecordByEnvelopeId: vi.fn().mockResolvedValue({
+        recordId: "LF-HDC-00005",
+        envelopeType: "fwa",
+      }),
+    });
+
+    await executeAnnatureWebhook(makePayload("env-fwa"), "valid-sig", deps);
+
+    const writtenFields =
+      (deps.updateRecordFields as ReturnType<typeof vi.fn>).mock.calls[0]?.[1] ?? {};
+    for (const key of Object.keys(BUNDLE_A_UPDATES)) {
+      expect(writtenFields).not.toHaveProperty(key);
+    }
   });
 });
 
@@ -304,5 +322,25 @@ describe("executeAnnatureWebhook — unknown envelope", () => {
 
     expect(result).toEqual({ status: 200 });
     expect(deps.updateRecordFields).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Handler throws
+// ---------------------------------------------------------------------------
+
+describe("executeAnnatureWebhook — handler throws", () => {
+  it("propagates error when updateRecordFields rejects", async () => {
+    const deps = makeDeps({
+      findRecordByEnvelopeId: vi.fn().mockResolvedValue({
+        recordId: "LF-HDC-00001",
+        envelopeType: "bundle_a",
+      }),
+      updateRecordFields: vi.fn().mockRejectedValue(new Error("DB write failed")),
+    });
+
+    await expect(
+      executeAnnatureWebhook(makePayload("env-combined"), "valid-sig", deps)
+    ).rejects.toThrow("DB write failed");
   });
 });
