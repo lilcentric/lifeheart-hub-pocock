@@ -58,7 +58,7 @@ export function getPortalItems(record: OnboardingRecord, token: string): AnyPort
     {
       kind: "sign",
       key: "position_description_status",
-      label: "Position Description & Code of Conduct",
+      label: "Position Description, Code of Conduct & Conflict of Interest",
       status: record.position_description_status,
       signingUrl,
     },
@@ -69,18 +69,25 @@ export function getPortalItems(record: OnboardingRecord, token: string): AnyPort
       status: record.employment_contract_status,
       signingUrl,
     },
+  ];
+
+  // FWA: only shown when opted in; positioned immediately after Employment Contract
+  if (record.flexible_working_opted_in) {
+    items.push({
+      kind: "sign",
+      key: "flexible_working_status",
+      label: "Flexible Working Agreement",
+      status: record.flexible_working_status,
+      signingUrl: record.fwa_signing_url ?? null,
+    });
+  }
+
+  items.push(
     {
       kind: "sign",
       key: "policies_status",
       label: "Policies",
       status: record.policies_status,
-      signingUrl,
-    },
-    {
-      kind: "sign",
-      key: "conflict_of_interest_status",
-      label: "Conflict of Interest",
-      status: record.conflict_of_interest_status,
       signingUrl,
     },
     {
@@ -146,19 +153,8 @@ export function getPortalItems(record: OnboardingRecord, token: string): AnyPort
       label: "First Aid & CPR",
       status: record.first_aid_cpr_status,
       documentType: "first_aid_cpr",
-    },
-  ];
-
-  // Item 14: FWA — only shown when flexible working was opted in
-  if (record.flexible_working_opted_in) {
-    items.push({
-      kind: "sign",
-      key: "flexible_working_status",
-      label: "Flexible Working Agreement",
-      status: record.flexible_working_status,
-      signingUrl: record.fwa_signing_url ?? null,
-    });
-  }
+    }
+  );
 
   return items;
 }

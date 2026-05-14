@@ -2,21 +2,18 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { resolveStaffToken } from "@/lib/token-service";
 import { getPortalItems } from "@/utils/portal-items";
 import type { AnyPortalItem, SignPortalItem, UploadPortalItem, MultiUploadPortalItem } from "@/utils/portal-items";
+import type { StaffDetail } from "@/lib/types";
 import StatusBadge from "@/components/onboarding/StatusBadge";
+import StaffDetailsForm from "@/components/onboarding/StaffDetailsForm";
 import WwccPanel from "@/components/onboarding/WwccPanel";
 import NdisWscUploadPanel from "@/components/onboarding/NdisWscUploadPanel";
 import ComplianceUploadPanel from "@/components/onboarding/ComplianceUploadPanel";
 import MultiFileUpload from "@/components/onboarding/MultiFileUpload";
-import Link from "next/link";
+import PortalSubmitButton from "@/components/onboarding/PortalSubmitButton";
 
 interface Props {
   params: Promise<{ token: string }>;
 }
-
-const REFERENCE_DOCS = [
-  { label: "Staff Handbook", path: "reference-docs/staff-handbook.pdf" },
-  { label: "SIL Voyager Staff Manual", path: "reference-docs/sil-voyager-staff-manual.pdf" },
-] as const;
 
 export default async function StaffPortalPage({ params }: Props) {
   const { token } = await params;
@@ -30,14 +27,12 @@ export default async function StaffPortalPage({ params }: Props) {
 
   const items = getPortalItems(record, token);
 
-  const signedUrls = await Promise.all(
-    REFERENCE_DOCS.map(async (doc) => {
-      const { data } = await supabase.storage
-        .from("staff-docs")
-        .createSignedUrl(doc.path, 300);
-      return { label: doc.label, url: data?.signedUrl ?? null };
-    })
-  );
+  const { data: rawDetail } = await supabase
+    .from("staff_details")
+    .select("*")
+    .eq("record_id", record.id)
+    .maybeSingle();
+  const staffDetail = rawDetail as StaffDetail | null;
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -68,41 +63,13 @@ export default async function StaffPortalPage({ params }: Props) {
                     <StatusBadge status={item.status} />
                   </div>
                 </div>
-                {renderItemPanel(item, record.id, token)}
+                {renderItemPanel(item, record.id, token, staffDetail)}
               </li>
             ))}
           </ul>
         </section>
 
-        <section aria-labelledby="docs-heading">
-          <h2
-            id="docs-heading"
-            className="text-sm font-medium text-gray-700 uppercase tracking-wide mb-3"
-          >
-            Reference Documents
-          </h2>
-          <ul className="space-y-2">
-            {signedUrls.map(({ label, url }) => (
-              <li key={label}>
-                {url ? (
-                  <a
-                    href={url}
-                    download
-                    className="inline-flex items-center gap-2 rounded-md bg-white border border-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 transition-colors"
-                  >
-                    <DownloadIcon />
-                    {label}
-                  </a>
-                ) : (
-                  <span className="inline-flex items-center gap-2 rounded-md bg-white border border-gray-200 px-4 py-2 text-sm text-gray-400 cursor-not-allowed">
-                    <DownloadIcon />
-                    {label} (unavailable)
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
+        <PortalSubmitButton token={token} />
       </div>
     </main>
   );
@@ -110,15 +77,7 @@ export default async function StaffPortalPage({ params }: Props) {
 
 function renderItemAction(item: AnyPortalItem) {
   if (item.kind === "form") {
-    if (item.status === "completed") return null;
-    return (
-      <Link
-        href={item.href}
-        className="text-sm text-blue-600 font-medium hover:text-blue-700 whitespace-nowrap"
-      >
-        Fill in →
-      </Link>
-    );
+    return null;
   }
 
   if (item.kind === "sign") {
@@ -144,8 +103,21 @@ function renderItemAction(item: AnyPortalItem) {
   return null;
 }
 
-function renderItemPanel(item: AnyPortalItem, recordId: string, token: string) {
+function renderItemPanel(
+  item: AnyPortalItem,
+  recordId: string,
+  token: string,
+  staffDetail: StaffDetail | null
+) {
   if (item.status === "completed") return null;
+
+  if (item.kind === "form") {
+    return (
+      <div className="mt-3">
+        <StaffDetailsForm token={token} existing={staffDetail} />
+      </div>
+    );
+  }
 
   if (item.kind === "upload") {
     const uploadItem = item as UploadPortalItem;
@@ -211,25 +183,5 @@ function TokenErrorPage() {
         </p>
       </div>
     </main>
-  );
-}
-
-function DownloadIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4 text-gray-400"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={2}
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"
-      />
-    </svg>
   );
 }
