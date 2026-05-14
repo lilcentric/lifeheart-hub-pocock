@@ -195,6 +195,98 @@ describe("executeAnnatureWebhook — TNA admin countersign", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Error propagation — bundle_a
+// ---------------------------------------------------------------------------
+
+describe("executeAnnatureWebhook — bundle_a updateRecordFields error", () => {
+  it("returns 500 when updateRecordFields fails", async () => {
+    const deps = makeDeps({
+      findRecordByEnvelopeId: vi.fn().mockResolvedValue({
+        recordId: "LF-HDC-00001",
+        envelopeType: "bundle_a",
+      }),
+      updateRecordFields: vi.fn().mockResolvedValue({ error: "DB connection refused" }),
+    });
+
+    const result = await executeAnnatureWebhook(makePayload("env-combined"), "valid-sig", deps);
+
+    expect(result).toEqual({ status: 500, error: "DB connection refused" });
+  });
+});
+
+describe("executeAnnatureWebhook — bundle_a fetchAndStorePdf error", () => {
+  it("returns 500 when fetchAndStorePdf fails", async () => {
+    const deps = makeDeps({
+      findRecordByEnvelopeId: vi.fn().mockResolvedValue({
+        recordId: "LF-HDC-00001",
+        envelopeType: "bundle_a",
+      }),
+      fetchAndStorePdf: vi.fn().mockResolvedValue({ error: "Storage write failed" }),
+    });
+
+    const result = await executeAnnatureWebhook(makePayload("env-combined"), "valid-sig", deps);
+
+    expect(result).toEqual({ status: 500, error: "Storage write failed" });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Error propagation — fwa
+// ---------------------------------------------------------------------------
+
+describe("executeAnnatureWebhook — fwa updateRecordFields error", () => {
+  it("returns 500 when updateRecordFields fails", async () => {
+    const deps = makeDeps({
+      findRecordByEnvelopeId: vi.fn().mockResolvedValue({
+        recordId: "LF-HDC-00005",
+        envelopeType: "fwa",
+      }),
+      updateRecordFields: vi.fn().mockResolvedValue({ error: "Unique constraint violation" }),
+    });
+
+    const result = await executeAnnatureWebhook(makePayload("env-fwa"), "valid-sig", deps);
+
+    expect(result).toEqual({ status: 500, error: "Unique constraint violation" });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Error propagation — tna
+// ---------------------------------------------------------------------------
+
+describe("executeAnnatureWebhook — tna staff updateRecordFields error", () => {
+  it("returns 500 when updateRecordFields fails on staff signing", async () => {
+    const deps = makeDeps({
+      findRecordByEnvelopeId: vi.fn().mockResolvedValue({
+        recordId: "LF-HDC-00003",
+        envelopeType: "tna",
+      }),
+      updateRecordFields: vi.fn().mockResolvedValue({ error: "Timeout" }),
+    });
+
+    const result = await executeAnnatureWebhook(makePayload("env-tna", "staff"), "valid-sig", deps);
+
+    expect(result).toEqual({ status: 500, error: "Timeout" });
+  });
+});
+
+describe("executeAnnatureWebhook — tna admin updateRecordFields error", () => {
+  it("returns 500 when updateRecordFields fails on admin countersign", async () => {
+    const deps = makeDeps({
+      findRecordByEnvelopeId: vi.fn().mockResolvedValue({
+        recordId: "LF-HDC-00003",
+        envelopeType: "tna",
+      }),
+      updateRecordFields: vi.fn().mockResolvedValue({ error: "Row not found" }),
+    });
+
+    const result = await executeAnnatureWebhook(makePayload("env-tna", "admin"), "valid-sig", deps);
+
+    expect(result).toEqual({ status: 500, error: "Row not found" });
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Unknown envelope
 // ---------------------------------------------------------------------------
 
