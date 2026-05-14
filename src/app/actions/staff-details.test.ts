@@ -37,6 +37,11 @@ vi.mock("@/lib/token-service", () => ({
   resolveStaffToken: mockResolveStaffToken,
 }));
 
+const mockRevalidatePath = vi.fn();
+vi.mock("next/cache", () => ({
+  revalidatePath: (...args: unknown[]) => mockRevalidatePath(...args),
+}));
+
 import { submitStaffDetails } from "./staff-details";
 
 // ---------------------------------------------------------------------------
@@ -172,5 +177,22 @@ describe("submitStaffDetails", () => {
     const result = await submitStaffDetails("good-token", VALID_INPUT);
 
     expect(result).toEqual({ error: "Status update failed" });
+  });
+
+  it("calls revalidatePath with the staff portal path on success", async () => {
+    mockResolveStaffToken.mockResolvedValue(RECORD);
+
+    await submitStaffDetails("good-token", VALID_INPUT);
+
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/onboard/good-token");
+  });
+
+  it("does not call revalidatePath when upsert fails", async () => {
+    mockResolveStaffToken.mockResolvedValue(RECORD);
+    mockUpsert.mockResolvedValue({ error: { message: "DB error" } });
+
+    await submitStaffDetails("good-token", VALID_INPUT);
+
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 });
