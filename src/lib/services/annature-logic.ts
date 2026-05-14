@@ -10,14 +10,12 @@ export interface SendAllDocumentsDeps {
   annatureId: string;
   annatureKey: string;
   accountId: string;
-  // Role ID for the "New Staff" signer slot across employment bundle templates
-  staffRoleId: string;
-  // Role ID for the "Director" countersignatory slot (preset name/email in template)
-  directorRoleId: string;
-  // FWA template ID (env var) — only used when flexibleWorkingOptedIn = true
+  // FWA template ID and its role IDs (env vars) — only used when flexibleWorkingOptedIn = true
   flexibleWorkingTemplateId: string;
-  // Look up the Annature template ID for the selected Employment Bundle
-  getEmploymentBundleAnnatureTemplateId: (bundleId: string) => Promise<string | null>;
+  fwaStaffRoleId: string;
+  fwaDirectorRoleId: string;
+  // Look up the Annature template ID + role IDs for the selected Employment Bundle
+  getEmploymentBundleAnnatureIds: (bundleId: string) => Promise<{ templateId: string; staffRoleId: string; directorRoleId: string } | null>;
   // Persist both envelopes and signing URLs
   persistEnvelopeData: (
     recordId: string,
@@ -47,15 +45,16 @@ export async function executeSendAllDocuments(
     annatureId,
     annatureKey,
     accountId,
-    staffRoleId,
-    directorRoleId,
     flexibleWorkingTemplateId,
-    getEmploymentBundleAnnatureTemplateId,
+    fwaStaffRoleId,
+    fwaDirectorRoleId,
+    getEmploymentBundleAnnatureIds,
     persistEnvelopeData,
   } = deps;
 
-  const bundleAnnatureTemplateId = await getEmploymentBundleAnnatureTemplateId(employmentBundleId);
-  if (!bundleAnnatureTemplateId) return { error: "Employment Bundle template not found" };
+  const bundleIds = await getEmploymentBundleAnnatureIds(employmentBundleId);
+  if (!bundleIds) return { error: "Employment Bundle template not found" };
+  const { templateId: bundleAnnatureTemplateId, staffRoleId, directorRoleId } = bundleIds;
 
   // POST Employment Bundle envelope via the template endpoint.
   // Each template has two roles: Director (countersignatory, preset defaults) and
@@ -124,8 +123,8 @@ export async function executeSendAllDocuments(
         body: JSON.stringify({
           account_id: accountId,
           recipients: [
-            { role_id: directorRoleId },
-            { role_id: staffRoleId, name: staffName, email: staffEmail },
+            { role_id: fwaDirectorRoleId },
+            { role_id: fwaStaffRoleId, name: staffName, email: staffEmail },
           ],
         }),
       });

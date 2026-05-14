@@ -114,16 +114,18 @@ export async function sendOnboardingLink(
             annatureId: requireEnv("ANNATURE_ID"),
             annatureKey: requireEnv("ANNATURE_KEY"),
             accountId: requireEnv("ANNATURE_ACCOUNT_ID"),
-            staffRoleId: requireEnv("ANNATURE_STAFF_ROLE_ID"),
-            directorRoleId: requireEnv("ANNATURE_DIRECTOR_ROLE_ID"),
             flexibleWorkingTemplateId: requireEnv("ANNATURE_FLEXIBLE_WORKING_TEMPLATE_ID"),
-            getEmploymentBundleAnnatureTemplateId: async (id) => {
+            fwaStaffRoleId: requireEnv("ANNATURE_FWA_STAFF_ROLE_ID"),
+            fwaDirectorRoleId: requireEnv("ANNATURE_FWA_DIRECTOR_ROLE_ID"),
+            getEmploymentBundleAnnatureIds: async (id) => {
               const { data } = await supabase
                 .from("employment_bundle_templates")
-                .select("annature_template_id")
+                .select("annature_template_id, staff_role_id, director_role_id")
                 .eq("id", id)
                 .single();
-              return (data as { annature_template_id: string } | null)?.annature_template_id ?? null;
+              if (!data) return null;
+              const row = data as { annature_template_id: string; staff_role_id: string; director_role_id: string };
+              return { templateId: row.annature_template_id, staffRoleId: row.staff_role_id, directorRoleId: row.director_role_id };
             },
             persistEnvelopeData: async (
               recId2,

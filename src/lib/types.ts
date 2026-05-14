@@ -35,6 +35,8 @@ export type EmploymentBundleTemplate = {
   employment_type: EmploymentType;
   version: string;
   annature_template_id: string;
+  staff_role_id: string;
+  director_role_id: string;
   archived: boolean;
   created_at: string;
 };

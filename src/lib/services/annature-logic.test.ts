@@ -89,25 +89,31 @@ describe("executeSendBundleA", () => {
 
 // ── executeSendAllDocuments ───────────────────────────────────────────────────
 
-const ALL_STAFF_ROLE_ID = "staff-role-all-docs";
-const ALL_DIRECTOR_ROLE_ID = "director-role-all-docs";
+const BUNDLE_STAFF_ROLE_ID = "staff-role-bundle";
+const BUNDLE_DIRECTOR_ROLE_ID = "director-role-bundle";
+const FWA_STAFF_ROLE_ID = "staff-role-fwa";
+const FWA_DIRECTOR_ROLE_ID = "director-role-fwa";
 const STAFF_NAME = "Test Staff";
 const FLEXIBLE_WORKING_TMPL = "tmpl-fw-001";
 const BUNDLE_ANNATURE_TMPL = "ann-bundle-001";
 
 function makeAllDocsDeps(
   fetchImpl: typeof fetch,
-  bundleAnnId: string | null = BUNDLE_ANNATURE_TMPL
+  bundleAnnIds: { templateId: string; staffRoleId: string; directorRoleId: string } | null = {
+    templateId: BUNDLE_ANNATURE_TMPL,
+    staffRoleId: BUNDLE_STAFF_ROLE_ID,
+    directorRoleId: BUNDLE_DIRECTOR_ROLE_ID,
+  }
 ) {
   return {
     fetch: fetchImpl,
     annatureId: "test-public-key",
     annatureKey: "test-private-key",
     accountId: ACCOUNT_ID,
-    staffRoleId: ALL_STAFF_ROLE_ID,
-    directorRoleId: ALL_DIRECTOR_ROLE_ID,
+    fwaStaffRoleId: FWA_STAFF_ROLE_ID,
+    fwaDirectorRoleId: FWA_DIRECTOR_ROLE_ID,
     flexibleWorkingTemplateId: FLEXIBLE_WORKING_TMPL,
-    getEmploymentBundleAnnatureTemplateId: vi.fn().mockResolvedValue(bundleAnnId),
+    getEmploymentBundleAnnatureIds: vi.fn().mockResolvedValue(bundleAnnIds),
     persistEnvelopeData: vi.fn().mockResolvedValue({ error: null }),
   };
 }
@@ -127,7 +133,7 @@ function makeSuccessFetch(envelopeId = "env-all-001", signingLink = "https://sig
 describe("executeSendAllDocuments", () => {
   it("returns error when Employment Bundle template lookup returns null", async () => {
     const mockFetch = vi.fn();
-    const deps = makeAllDocsDeps(mockFetch, null);
+    const deps = makeAllDocsDeps(mockFetch, null as Parameters<typeof makeAllDocsDeps>[1]);
 
     const result = await executeSendAllDocuments(
       "LF-HDC-00020", "staff@example.com", STAFF_NAME, "bundle-uuid", false, deps
@@ -150,8 +156,8 @@ describe("executeSendAllDocuments", () => {
     const body = JSON.parse(init.body as string);
     expect(body.account_id).toBe(ACCOUNT_ID);
     expect(body.recipients).toEqual([
-      { role_id: ALL_DIRECTOR_ROLE_ID },
-      { role_id: ALL_STAFF_ROLE_ID, name: STAFF_NAME, email: "staff@example.com" },
+      { role_id: BUNDLE_DIRECTOR_ROLE_ID },
+      { role_id: BUNDLE_STAFF_ROLE_ID, name: STAFF_NAME, email: "staff@example.com" },
     ]);
   });
 
@@ -230,8 +236,8 @@ describe("executeSendAllDocuments", () => {
     expect(fwaPostCall[0]).toBe(`https://api.annature.com.au/v1/templates/${FLEXIBLE_WORKING_TMPL}/use`);
     const fwaBody = JSON.parse(fwaPostCall[1].body as string);
     expect(fwaBody.recipients).toEqual([
-      { role_id: ALL_DIRECTOR_ROLE_ID },
-      { role_id: ALL_STAFF_ROLE_ID, name: STAFF_NAME, email: "staff@example.com" },
+      { role_id: FWA_DIRECTOR_ROLE_ID },
+      { role_id: FWA_STAFF_ROLE_ID, name: STAFF_NAME, email: "staff@example.com" },
     ]);
 
     expect(deps.persistEnvelopeData).toHaveBeenCalledWith(
