@@ -1,9 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// ---------------------------------------------------------------------------
-// Mock hoisting
-// ---------------------------------------------------------------------------
-
 const { mockSend } = vi.hoisted(() => ({
   mockSend: vi.fn(),
 }));
@@ -15,10 +11,6 @@ vi.mock("resend", () => ({
 }));
 
 import { EmailService } from "./email-service";
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -60,5 +52,62 @@ describe("EmailService.sendSubmissionNotification", () => {
 
     const call = mockSend.mock.calls[0][0];
     expect(call.html).toContain("https://hub.lifeheart.com.au/onboarding/LF-HDC-00001");
+  });
+});
+
+describe("EmailService.sendReferenceDocuments", () => {
+  it("sends to the correct recipient", async () => {
+    await EmailService.sendReferenceDocuments(
+      "jane@example.com",
+      "Jane Smith",
+      "https://storage.example/handbook",
+      "https://storage.example/sil-manual"
+    );
+
+    expect(mockSend).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "jane@example.com" })
+    );
+  });
+
+  it("uses the correct subject", async () => {
+    await EmailService.sendReferenceDocuments(
+      "jane@example.com",
+      "Jane Smith",
+      "https://storage.example/handbook",
+      "https://storage.example/sil-manual"
+    );
+
+    expect(mockSend).toHaveBeenCalledWith(
+      expect.objectContaining({ subject: "Your Lifeheart reference documents" })
+    );
+  });
+
+  it("includes both document URLs in the HTML body", async () => {
+    const handbookUrl = "https://storage.example/handbook?token=abc";
+    const silManualUrl = "https://storage.example/sil-manual?token=xyz";
+
+    await EmailService.sendReferenceDocuments(
+      "jane@example.com",
+      "Jane Smith",
+      handbookUrl,
+      silManualUrl
+    );
+
+    const { html } = mockSend.mock.calls[0][0] as { html: string };
+    expect(html).toContain(handbookUrl);
+    expect(html).toContain(silManualUrl);
+  });
+
+  it("throws when Resend returns an error", async () => {
+    mockSend.mockResolvedValue({ data: null, error: { message: "API key invalid" } });
+
+    await expect(
+      EmailService.sendReferenceDocuments(
+        "jane@example.com",
+        "Jane Smith",
+        "https://storage.example/handbook",
+        "https://storage.example/sil-manual"
+      )
+    ).rejects.toThrow("API key invalid");
   });
 });
