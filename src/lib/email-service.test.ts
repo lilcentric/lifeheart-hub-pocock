@@ -24,7 +24,8 @@ describe("EmailService.sendSubmissionNotification", () => {
     await EmailService.sendSubmissionNotification(
       "officer@lifeheart.com.au",
       "Alice Example",
-      "LF-HDC-00001"
+      "LF-HDC-00001",
+      []
     );
 
     expect(mockSend).toHaveBeenCalledWith(
@@ -36,7 +37,8 @@ describe("EmailService.sendSubmissionNotification", () => {
     await EmailService.sendSubmissionNotification(
       "officer@lifeheart.com.au",
       "Alice Example",
-      "LF-HDC-00001"
+      "LF-HDC-00001",
+      []
     );
 
     const call = mockSend.mock.calls[0][0];
@@ -47,11 +49,49 @@ describe("EmailService.sendSubmissionNotification", () => {
     await EmailService.sendSubmissionNotification(
       "officer@lifeheart.com.au",
       "Alice Example",
-      "LF-HDC-00001"
+      "LF-HDC-00001",
+      []
     );
 
     const call = mockSend.mock.calls[0][0];
     expect(call.html).toContain("https://hub.lifeheart.com.au/onboarding/LF-HDC-00001");
+  });
+
+  it("text body lists each snapshot item as '  <label>: <status>'", async () => {
+    const snapshot = [
+      { label: "Employee Details Form", status: "Not Completed" },
+      { label: "Employment Contract", status: "Completed" },
+    ];
+    await EmailService.sendSubmissionNotification(
+      "officer@lifeheart.com.au",
+      "Alice Example",
+      "LF-HDC-00001",
+      snapshot
+    );
+
+    const { text } = mockSend.mock.calls[0][0] as { text: string };
+    expect(text).toContain("  Employee Details Form: Not Completed");
+    expect(text).toContain("  Employment Contract: Completed");
+  });
+
+  it("html body contains a table row for each snapshot item", async () => {
+    const snapshot = [
+      { label: "Employee Details Form", status: "Not Completed" },
+      { label: "Employment Contract", status: "Completed" },
+    ];
+    await EmailService.sendSubmissionNotification(
+      "officer@lifeheart.com.au",
+      "Alice Example",
+      "LF-HDC-00001",
+      snapshot
+    );
+
+    const { html } = mockSend.mock.calls[0][0] as { html: string };
+    expect(html).toContain("<table");
+    expect(html).toContain("Employee Details Form");
+    expect(html).toContain("Not Completed");
+    expect(html).toContain("Employment Contract");
+    expect(html).toContain("Completed");
   });
 });
 
