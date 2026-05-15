@@ -68,20 +68,44 @@ export const EmailService = {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
     const recordUrl = `${appUrl}/onboarding/${recordId}`;
 
-    const text = snapshot.map(({ label, status }) => `  ${label}: ${status}`).join("\n");
+    const snapshotLines = snapshot
+      .map((item) => `  ${item.label}: ${item.status}`)
+      .join("\n");
 
-    const tableRows = snapshot
-      .map(({ label, status }) => `<tr><td>${label}</td><td>${status}</td></tr>`)
+    const plaintext = [
+      `${staffName} has submitted their onboarding portal.`,
+      "",
+      "--- Checklist snapshot ---",
+      snapshotLines,
+      "--------------------------",
+      "",
+      `Review record: ${recordUrl}`,
+    ].join("\n");
+
+    const htmlRows = snapshot
+      .map(
+        (item) =>
+          `<tr><td style="padding:4px 8px;border-bottom:1px solid #eee">${item.label}</td>` +
+          `<td style="padding:4px 8px;border-bottom:1px solid #eee">${item.status}</td></tr>`
+      )
       .join("");
 
     const { error } = await resend.emails.send({
       from: process.env.RESEND_FROM ?? DEFAULT_FROM,
       to,
       subject: `${staffName} has submitted their onboarding documents`,
-      text,
+      text: plaintext,
       html: `
         <p>${staffName} has marked their onboarding portal as complete.</p>
-        <table>${tableRows}</table>
+        <table style="border-collapse:collapse;font-size:14px;margin:16px 0">
+          <thead>
+            <tr>
+              <th style="padding:4px 8px;text-align:left;border-bottom:2px solid #ccc">Item</th>
+              <th style="padding:4px 8px;text-align:left;border-bottom:2px solid #ccc">Status</th>
+            </tr>
+          </thead>
+          <tbody>${htmlRows}</tbody>
+        </table>
         <p><a href="${recordUrl}">Review their record</a></p>
         <p>Lifeheart Hub</p>
       `,

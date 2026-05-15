@@ -109,18 +109,18 @@ describe("recordSingleUpload", () => {
 });
 
 // ---------------------------------------------------------------------------
-// getMultiUploadUrl
+// getSingleUploadUrl
 // ---------------------------------------------------------------------------
 
-describe("getMultiUploadUrl", () => {
-  it("returns uploadUrl and path using the same path structure as single uploads", async () => {
+describe("getSingleUploadUrl (multi-file uploads use the same path scheme)", () => {
+  it("returns uploadUrl and path", async () => {
     const { service, storageMock } = makeService();
     storageMock.createSignedUploadUrl.mockResolvedValue({
       data: { signedUrl: "https://storage.example/multi-signed-upload" },
       error: null,
     });
 
-    const result = await service.getMultiUploadUrl(
+    const result = await service.getSingleUploadUrl(
       "LF-HDC-00002",
       "qualifications",
       "cert.pdf"
@@ -141,7 +141,7 @@ describe("getMultiUploadUrl", () => {
     });
 
     await expect(
-      service.getMultiUploadUrl("LF-HDC-00002", "qualifications", "cert.pdf")
+      service.getSingleUploadUrl("LF-HDC-00002", "qualifications", "cert.pdf")
     ).rejects.toThrow("Storage error");
   });
 });

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { STORAGE_BUCKETS } from "@/lib/storage-service";
 import { redirect, notFound } from "next/navigation";
 import OnboardingForm from "@/components/onboarding/OnboardingForm";
 import NdisWscPanel from "@/components/onboarding/NdisWscPanel";
@@ -77,7 +78,7 @@ export default async function EditOnboardingPage({ params }: Props) {
   let ndiswscDownloadUrl: string | null = null;
   if (record.ndiswsc_storage_path) {
     const { data } = await supabase.storage
-      .from("onboarding-docs")
+      .from(STORAGE_BUCKETS.staffPortalSingleUploads)
       .createSignedUrl(record.ndiswsc_storage_path, 3600);
     ndiswscDownloadUrl = data?.signedUrl ?? null;
   }
@@ -101,7 +102,7 @@ export default async function EditOnboardingPage({ params }: Props) {
       const documents = await Promise.all(
         docs.map(async (doc) => {
           const { data } = await supabase.storage
-            .from("documents")
+            .from(STORAGE_BUCKETS.staffPortalMultiUploads)
             .createSignedUrl(doc.storage_path, 3600);
           return {
             filename: doc.filename,

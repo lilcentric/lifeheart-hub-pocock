@@ -1,8 +1,33 @@
-import type { OnboardingRecord, OnboardingStatus } from "./types";
+import type { OnboardingRecord, OnboardingStatus, ComplianceDocumentType } from "./types";
 
 type StatusFieldKey = {
   [K in keyof OnboardingRecord]: K extends `${string}_status` ? K : never;
 }[keyof OnboardingRecord];
+
+// Upload variants determine which server action and panel the staff portal uses.
+export type UploadVariant = "compliance" | "wwcc" | "ndiswsc";
+
+// Portal-facing configuration for a status field. Present only on fields that appear
+// in the staff self-service portal. Order determines checklist position.
+export type PortalItemConfig =
+  | { kind: "form"; label: string; order: number }
+  | {
+      kind: "sign";
+      label: string;
+      signingUrlField: "signing_url" | "fwa_signing_url";
+      conditional?: "flexible_working_opted_in";
+      order: number;
+    }
+  | {
+      kind: "upload";
+      label: string;
+      uploadVariant: UploadVariant;
+      documentType?: ComplianceDocumentType;
+      howToGetItUrl?: string;
+      usePortalStatus?: true;
+      order: number;
+    }
+  | { kind: "multi-upload"; label: string; documentType: string; order: number };
 
 // Envelope types that can be matched to registry-owned fields via getEnvelopeFieldUpdates.
 // "tna" is excluded — its sequential staff/admin signing is handled by custom logic in the webhook.
@@ -26,6 +51,7 @@ type RegistryEntry = {
   legacy?: true;          // dimmed in the tracker UI, pending removal
   upload?: UploadConfig;  // present when this item has a staff file upload
   envelopeOwner?: EnvelopeOwner; // present when set by an Annature signing event
+  portal?: PortalItemConfig; // present when this item appears in the staff portal checklist
 };
 
 // Registry of every _status field. TypeScript enforces exhaustiveness: adding a
@@ -41,16 +67,21 @@ const REGISTRY = {
   position_description_status: {
     include: true, group: "Documentation", label: "Position Description",
     envelopeOwner: "bundle_a" as const,
+    portal: { kind: "sign" as const, label: "Position Description, Code of Conduct & Conflict of Interest", signingUrlField: "signing_url" as const, order: 2 },
   },
   employment_contract_status: {
     include: true, group: "Documentation", label: "Contract",
     envelopeOwner: "bundle_a" as const,
+    portal: { kind: "sign" as const, label: "Employment Contract", signingUrlField: "signing_url" as const, order: 3 },
   },
   code_of_conduct_status: {
     include: true, group: "Documentation", label: "Code of Conduct",
     envelopeOwner: "bundle_a" as const,
   },
-  employee_details_form_status: { include: true, group: "Documentation", label: "Employee Details" },
+  employee_details_form_status: {
+    include: true, group: "Documentation", label: "Employee Details",
+    portal: { kind: "form" as const, label: "Employee Details Form", order: 1 },
+  },
   conflict_of_interest_status: {
     include: true, group: "Documentation", label: "Conflict of Interest",
     envelopeOwner: "bundle_a" as const,
@@ -60,30 +91,37 @@ const REGISTRY = {
   identity_right_to_work_status: {
     include: true, group: "Compliance & Identity", label: "ID / Right to Work",
     upload: { kind: "single" as const, pathField: "identity_right_to_work_storage_path" as const, uploadedStatus: "completed" as const },
+    portal: { kind: "upload" as const, label: "Identity & Right to Work", uploadVariant: "compliance" as const, documentType: "identity_right_to_work" as const, order: 6 },
   },
   wwcc_status: {
     include: true, group: "Compliance & Identity", label: "WWCC",
     upload: { kind: "single" as const, pathField: "wwcc_storage_path" as const, uploadedStatus: "in_progress" as const },
+    portal: { kind: "upload" as const, label: "Working With Children Check", uploadVariant: "wwcc" as const, howToGetItUrl: "https://www.service.nsw.gov.au/transaction/apply-for-a-working-with-children-check", order: 8 },
   },
   ndiswsc_status: {
     include: true, group: "Compliance & Identity", label: "NDISWSC",
     upload: { kind: "single" as const, pathField: "ndiswsc_storage_path" as const, uploadedStatus: "in_progress" as const },
+    portal: { kind: "upload" as const, label: "NDIS Worker Screening Check", uploadVariant: "ndiswsc" as const, howToGetItUrl: "https://www.service.nsw.gov.au/transaction/apply-for-an-ndis-worker-screening-check", usePortalStatus: true as const, order: 9 },
   },
   ndis_orientation_status: {
     include: true, group: "Compliance & Identity", label: "NDIS Orientation",
     upload: { kind: "single" as const, pathField: "ndis_orientation_storage_path" as const, uploadedStatus: "completed" as const },
+    portal: { kind: "upload" as const, label: "NDIS Worker Orientation Module", uploadVariant: "compliance" as const, documentType: "ndis_orientation" as const, order: 10 },
   },
   qualifications_status: {
     include: true, group: "Compliance & Identity", label: "Qualifications",
     upload: { kind: "multi" as const, uploadedStatus: "completed" as const },
+    portal: { kind: "multi-upload" as const, label: "Qualifications", documentType: "qualifications", order: 12 },
   },
   first_aid_cpr_status: {
     include: true, group: "Compliance & Identity", label: "First Aid & CPR",
     upload: { kind: "multi" as const, uploadedStatus: "completed" as const },
+    portal: { kind: "multi-upload" as const, label: "First Aid & CPR", documentType: "first_aid_cpr", order: 13 },
   },
   car_insurance_status: {
     include: true, group: "Compliance & Identity", label: "Car Insurance",
     upload: { kind: "single" as const, pathField: "car_insurance_storage_path" as const, uploadedStatus: "completed" as const },
+    portal: { kind: "upload" as const, label: "Car Insurance", uploadVariant: "compliance" as const, documentType: "car_insurance" as const, order: 7 },
   },
 
   // Training & Induction
@@ -101,14 +139,17 @@ const REGISTRY = {
   flexible_working_status: {
     include: false, group: "Admin", label: "Flexible Working",
     envelopeOwner: "fwa" as const,
+    portal: { kind: "sign" as const, label: "Flexible Working Agreement", signingUrlField: "fwa_signing_url" as const, conditional: "flexible_working_opted_in" as const, order: 4 },
   },
   policies_status: {
     include: false, group: "Admin", label: "Policies",
     envelopeOwner: "bundle_a" as const,
+    portal: { kind: "sign" as const, label: "Policies", signingUrlField: "signing_url" as const, order: 5 },
   },
   additional_training_status: {
     include: false, group: "Admin", label: "Additional Training",
     upload: { kind: "single" as const, pathField: "additional_training_storage_path" as const, uploadedStatus: "completed" as const },
+    portal: { kind: "upload" as const, label: "Additional Training Certificates", uploadVariant: "compliance" as const, documentType: "additional_training" as const, order: 11 },
   },
 } as const satisfies Record<StatusFieldKey, RegistryEntry>;
 
@@ -164,7 +205,7 @@ export function getEnvelopeFieldUpdates(
 // Returns the upload config for a given status field key, or null if the field
 // has no file upload. Used by recordUpload to determine storage and status behaviour.
 export function getUploadConfig(statusField: StatusFieldKey): UploadConfig | null {
-  const entry = REGISTRY[statusField];
+  const entry = REGISTRY[statusField] as RegistryEntry;
   return entry.upload ?? null;
 }
 

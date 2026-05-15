@@ -2,11 +2,9 @@
 
 import { createServiceClient } from "@/lib/supabase/service";
 import { resolveStaffToken } from "@/lib/token-service";
-import { StorageService } from "@/lib/storage-service";
+import { StorageService, STORAGE_BUCKETS } from "@/lib/storage-service";
 import { recordUpload, type UploadKind } from "@/lib/record-upload";
 import { revalidatePath } from "next/cache";
-
-const DOCUMENTS_BUCKET = "documents";
 
 export async function getStaffUploadUrl(
   token: string,
@@ -19,11 +17,11 @@ export async function getStaffUploadUrl(
   const supabase = createServiceClient();
   const storage = new StorageService(
     supabase,
-    supabase.storage.from(DOCUMENTS_BUCKET)
+    supabase.storage.from(STORAGE_BUCKETS.staffPortalMultiUploads)
   );
 
   try {
-    const { uploadUrl, path } = await storage.getMultiUploadUrl(
+    const { uploadUrl, path } = await storage.getSingleUploadUrl(
       record.id,
       documentType,
       filename
@@ -44,7 +42,7 @@ export async function recordStaffUpload(
   if (!record) return { error: "Invalid or expired link" };
 
   const supabase = createServiceClient();
-  const bucket = supabase.storage.from(DOCUMENTS_BUCKET);
+  const bucket = supabase.storage.from(STORAGE_BUCKETS.staffPortalMultiUploads);
 
   const result = await recordUpload(record.id, documentType as UploadKind, storagePath, filename, {
     updateRecord: async (id, updates) => {

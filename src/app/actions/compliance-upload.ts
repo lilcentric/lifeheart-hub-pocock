@@ -3,9 +3,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { withRole } from "@/lib/auth-guard";
-import { StorageService } from "@/lib/storage-service";
+import { StorageService, STORAGE_BUCKETS } from "@/lib/storage-service";
 import { recordUpload, type UploadKind } from "@/lib/record-upload";
-import type { ComplianceDocumentType } from "./compliance-upload-logic";
+import type { ComplianceDocumentType } from "@/lib/types";
 
 export type { ComplianceDocumentType };
 
@@ -19,7 +19,7 @@ export async function getComplianceUploadUrl(
   return withRole("officer", async () => {
     const supabase = await createClient();
     try {
-      const storage = supabase.storage.from("onboarding-docs");
+      const storage = supabase.storage.from(STORAGE_BUCKETS.officerCompliance);
       const storageService = new StorageService(supabase as never, storage);
       return await storageService.getSingleUploadUrl(recordId, documentType, filename);
     } catch (err) {
