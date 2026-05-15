@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { getComplianceUploadUrl, recordComplianceUpload } from "@/app/actions/compliance-upload";
+import { getPortalComplianceUploadUrl, recordPortalComplianceUpload } from "@/app/actions/compliance-upload-portal";
 import type { ComplianceDocumentType } from "@/app/actions/compliance-upload-logic";
 import type { OnboardingStatus } from "@/lib/types";
 
@@ -33,7 +33,7 @@ export default function ComplianceUploadPanel({
     setUploading(true);
     setError(null);
 
-    const urlResult = await getComplianceUploadUrl(recordId, documentType, file.name);
+    const urlResult = await getPortalComplianceUploadUrl(recordId, documentType, file.name);
     if ("error" in urlResult) {
       setError(urlResult.error);
       setUploading(false);
@@ -53,7 +53,7 @@ export default function ComplianceUploadPanel({
       return;
     }
 
-    const recordResult = await recordComplianceUpload(recordId, documentType, path);
+    const recordResult = await recordPortalComplianceUpload(recordId, documentType, path);
     if ("error" in recordResult) {
       setError(recordResult.error);
       setUploading(false);
