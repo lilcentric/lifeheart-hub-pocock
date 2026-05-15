@@ -14,7 +14,7 @@ export async function getPortalComplianceUploadUrl(
   const supabase = createServiceClient();
   const storage = new StorageService(
     supabase,
-    supabase.storage.from("onboarding-documents")
+    supabase.storage.from("onboarding-docs")
   );
   try {
     return await storage.getSingleUploadUrl(recordId, documentType, filename);

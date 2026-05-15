@@ -19,7 +19,7 @@ export async function getComplianceUploadUrl(
   return withRole("officer", async () => {
     const supabase = await createClient();
     try {
-      const storage = supabase.storage.from("onboarding-documents");
+      const storage = supabase.storage.from("onboarding-docs");
       const storageService = new StorageService(supabase as never, storage);
       return await storageService.getSingleUploadUrl(recordId, documentType, filename);
     } catch (err) {
