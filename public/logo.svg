@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 72" width="320" height="72" role="img" aria-label="Lifeheart">
+  <!-- Pill background -->
+  <rect x="0" y="0" width="320" height="72" rx="36" ry="36" fill="#1a1a2e"/>
+  <!-- Wordmark -->
+  <text
+    x="160"
+    y="44"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="28"
+    font-weight="400"
+    letter-spacing="3"
+    fill="#ffffff"
+    text-anchor="middle"
+    dominant-baseline="auto"
+  >LIFEHEART</text>
+</svg>
