@@ -101,7 +101,7 @@ export default async function EditOnboardingPage({ params }: Props) {
       const documents = await Promise.all(
         docs.map(async (doc) => {
           const { data } = await supabase.storage
-            .from("documents")
+            .from("onboarding-docs")
             .createSignedUrl(doc.storage_path, 3600);
           return {
             filename: doc.filename,

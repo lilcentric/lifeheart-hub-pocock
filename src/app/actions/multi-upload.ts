@@ -6,7 +6,7 @@ import { StorageService } from "@/lib/storage-service";
 import { recordUpload, type UploadKind } from "@/lib/record-upload";
 import { revalidatePath } from "next/cache";
 
-const DOCUMENTS_BUCKET = "documents";
+const DOCUMENTS_BUCKET = "onboarding-docs";
 
 export async function getStaffUploadUrl(
   token: string,
