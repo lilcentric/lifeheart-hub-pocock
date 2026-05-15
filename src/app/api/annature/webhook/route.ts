@@ -4,9 +4,20 @@ import { createServiceClient } from "@/lib/supabase/service";
 import {
   executeAnnatureWebhook,
   type AnnatureWebhookDeps,
+  type EnvelopeType,
 } from "@/lib/services/annature-webhook-logic";
+import { STORAGE_BUCKETS } from "@/lib/storage-service";
 
 const ANNATURE_BASE = "https://api.annature.com.au";
+
+// Maps each envelope type to the onboarding_records column that stores its envelope ID.
+// TypeScript enforces exhaustiveness: adding a new EnvelopeType without updating this map
+// is a compile error.
+const ENVELOPE_ID_COLUMNS: Record<EnvelopeType, string> = {
+  bundle_a: "bundle_a_envelope_id",
+  tna: "tna_envelope_id",
+  fwa: "fwa_envelope_id",
+};
 
 function validateHmac(rawBody: string, signature: string, secret: string): boolean {
   try {
@@ -30,13 +41,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     validateHmac,
 
     async findRecordByEnvelopeId(envelopeId) {
-      const columns = [
-        { col: "bundle_a_envelope_id", type: "bundle_a" as const },
-        { col: "tna_envelope_id", type: "tna" as const },
-        { col: "fwa_envelope_id", type: "fwa" as const },
-      ];
-
-      for (const { col, type } of columns) {
+      for (const [type, col] of Object.entries(ENVELOPE_ID_COLUMNS) as [EnvelopeType, string][]) {
         const { data } = await db
           .from("onboarding_records")
           .select("id")
@@ -77,7 +82,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       const path = `onboarding/${recordId}/${documentType}/signed.pdf`;
 
       const { error } = await db.storage
-        .from("documents")
+        .from(STORAGE_BUCKETS.signedDocuments)
         .upload(path, pdfBuffer, { contentType: "application/pdf", upsert: true });
 
       return { error: error?.message ?? null };

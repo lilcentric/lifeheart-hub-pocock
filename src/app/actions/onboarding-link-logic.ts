@@ -10,7 +10,9 @@ export interface SendOnboardingLinkDeps {
     flexibleWorkingOptedIn: boolean
   ) => Promise<{ envelopeId: string; signingUrl: string | null; fwaEnvelopeId: string | null; fwaSigningUrl: string | null } | { error: string }>;
   createXeroEmployee: (name: string, email: string) => Promise<{ xeroEmployeeId: string } | { error: string }>;
-  scheduleXeroInvite: (xeroEmployeeId: string) => Promise<{ error: string | null }>;
+  // ADR-0009: sent 1 hour after the onboarding email via a scheduled job so the
+  // staff member reads the Lifeheart email before receiving the Xero invite.
+  sendXeroInvite: (xeroEmployeeId: string) => Promise<{ error: string | null }>;
 }
 
 export type SendOnboardingLinkResult =
@@ -49,7 +51,7 @@ export async function executeSendOnboardingLink(
   if ("error" in xeroResult) {
     xeroWarning = xeroResult.error;
   } else {
-    const inviteResult = await deps.scheduleXeroInvite(xeroResult.xeroEmployeeId);
+    const inviteResult = await deps.sendXeroInvite(xeroResult.xeroEmployeeId);
     if (inviteResult.error) {
       xeroWarning = inviteResult.error;
     }

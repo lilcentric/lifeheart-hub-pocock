@@ -64,7 +64,6 @@ const RECORD: OnboardingRecord = {
   code_of_conduct_status: "not_completed",
   employee_details_form_status: "not_completed",
   conflict_of_interest_status: "not_completed",
-  screening_checks_status: "not_completed",
   ndiswsc_status: "not_completed",
   training_status: "not_completed",
   orientation_induction_status: "not_completed",

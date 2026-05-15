@@ -1,10 +1,9 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/service";
-import { StorageService } from "@/lib/storage-service";
+import { StorageService, STORAGE_BUCKETS } from "@/lib/storage-service";
 import { revalidatePath } from "next/cache";
 import { recordUpload } from "@/lib/record-upload";
-import { executeNdisWscApplying } from "./ndiswsc-upload-logic";
 
 type ActionResult = { success: true } | { error: string };
 
@@ -15,7 +14,7 @@ export async function getNdisWscUploadUrl(
   const supabase = createServiceClient();
   const storage = new StorageService(
     supabase,
-    supabase.storage.from("onboarding-docs")
+    supabase.storage.from(STORAGE_BUCKETS.staffPortalSingleUploads)
   );
 
   try {
@@ -52,17 +51,11 @@ export async function markNdisWscUploaded(
 
 export async function markNdisWscApplying(recordId: string): Promise<ActionResult> {
   const supabase = createServiceClient();
-
-  const result = await executeNdisWscApplying(recordId, async (id, status) => {
-    const { error } = await supabase
-      .from("onboarding_records")
-      .update({ ndiswsc_status: status })
-      .eq("id", id);
-    return { error: error ? { message: error.message } : null };
-  });
-
-  if ("success" in result) {
-    revalidatePath(`/onboard`);
-  }
-  return result;
+  const { error } = await supabase
+    .from("onboarding_records")
+    .update({ ndiswsc_status: "in_progress" })
+    .eq("id", recordId);
+  if (error) return { error: error.message };
+  revalidatePath(`/onboard`);
+  return { success: true };
 }

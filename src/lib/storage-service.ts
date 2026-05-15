@@ -1,6 +1,21 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
+// Named bucket constants — all bucket references in the codebase should use these,
+// not inline strings, so bucket names are visible from one place.
+export const STORAGE_BUCKETS = {
+  // Staff portal single-file uploads (WWCC, NDISWSC)
+  staffPortalSingleUploads: "onboarding-docs",
+  // Staff portal multi-file uploads (Qualifications, First Aid & CPR)
+  staffPortalMultiUploads: "documents",
+  // Officer-initiated compliance uploads from the admin record view
+  officerCompliance: "onboarding-documents",
+  // Signed Annature PDFs downloaded by the webhook
+  signedDocuments: "documents",
+  // Static reference files (Staff Handbook, SIL Voyager Manual)
+  staffDocs: "staff-docs",
+} as const;
+
 type Db = SupabaseClient<Database>;
 
 interface StorageClient {
@@ -41,14 +56,6 @@ export class StorageService {
       .update({ [column]: path } as never)
       .eq("id", recordId);
     if (error) throw new Error(error.message);
-  }
-
-  async getMultiUploadUrl(
-    recordId: string,
-    documentType: string,
-    filename: string
-  ): Promise<{ uploadUrl: string; path: string }> {
-    return this.getSingleUploadUrl(recordId, documentType, filename);
   }
 
   async recordMultiUpload(

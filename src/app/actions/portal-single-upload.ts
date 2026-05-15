@@ -2,35 +2,37 @@
 
 import { createServiceClient } from "@/lib/supabase/service";
 import { StorageService, STORAGE_BUCKETS } from "@/lib/storage-service";
+import { recordUpload, type UploadKind } from "@/lib/record-upload";
 import { revalidatePath } from "next/cache";
-import { recordUpload } from "@/lib/record-upload";
+import type { ComplianceDocumentType } from "@/lib/types";
 
 type ActionResult = { success: true } | { error: string };
 
-export async function getWwccUploadUrl(
+export async function getPortalUploadUrl(
   recordId: string,
+  documentType: ComplianceDocumentType,
   filename: string
 ): Promise<{ uploadUrl: string; path: string } | { error: string }> {
   const supabase = createServiceClient();
   const storage = new StorageService(
     supabase,
-    supabase.storage.from(STORAGE_BUCKETS.staffPortalSingleUploads)
+    supabase.storage.from(STORAGE_BUCKETS.officerCompliance)
   );
-
   try {
-    return await storage.getSingleUploadUrl(recordId, "wwcc", filename);
+    return await storage.getSingleUploadUrl(recordId, documentType, filename);
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Upload URL failed" };
   }
 }
 
-export async function markWwccUploaded(
+export async function recordPortalUpload(
   recordId: string,
-  storagePath: string
+  documentType: ComplianceDocumentType,
+  path: string
 ): Promise<ActionResult> {
   const supabase = createServiceClient();
 
-  const result = await recordUpload(recordId, "wwcc", storagePath, "", {
+  const result = await recordUpload(recordId, documentType as UploadKind, path, "", {
     updateRecord: async (id, updates) => {
       const { error } = await supabase
         .from("onboarding_records")
@@ -47,15 +49,4 @@ export async function markWwccUploaded(
     revalidatePath(`/onboard`);
   }
   return result;
-}
-
-export async function markWwccApplying(recordId: string): Promise<ActionResult> {
-  const supabase = createServiceClient();
-  const { error } = await supabase
-    .from("onboarding_records")
-    .update({ wwcc_status: "in_progress" })
-    .eq("id", recordId);
-  if (error) return { error: error.message };
-  revalidatePath(`/onboard`);
-  return { success: true };
 }

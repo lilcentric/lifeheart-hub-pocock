@@ -33,7 +33,6 @@ const baseRecord: OnboardingRecord = {
   orientation_induction_status: "not_completed",
   training_needs_status: "na",
   uniforms_status: "na",
-  screening_checks_status: "not_completed",
   tna_status: "not_completed",
   identity_right_to_work_storage_path: null,
   ndis_orientation_storage_path: null,

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { withRole } from "@/lib/auth-guard";
 import type { OnboardingStatus } from "@/lib/types";
-import { executeNdisWscTransition } from "./ndiswsc-logic";
+import { canTransitionNdisWsc } from "@/utils/ndiswsc-transitions";
 
 type ActionResult = { success: true } | { error: string };
 
@@ -28,25 +28,19 @@ async function _updateNdisWsc(
   targetStatus: OnboardingStatus
 ): Promise<ActionResult> {
   return withRole("officer", async (ctx) => {
-    const supabase = await createClient();
-
-    const result = await executeNdisWscTransition({
-      recordId,
-      currentStatus,
-      targetStatus,
-      userRole: ctx.role,
-      updateRecord: async (id, status) => {
-        const { error } = await supabase
-          .from("onboarding_records")
-          .update({ ndiswsc_status: status })
-          .eq("id", id);
-        return { error: error ? { message: error.message } : null };
-      },
-    });
-
-    if ("success" in result) {
-      revalidatePath(`/onboarding/${recordId}`);
+    if (ctx.role !== "admin") return { error: "Unauthorised" };
+    if (!canTransitionNdisWsc(currentStatus, targetStatus, ctx.role)) {
+      return { error: "Invalid transition" };
     }
-    return result;
+
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("onboarding_records")
+      .update({ ndiswsc_status: targetStatus })
+      .eq("id", recordId);
+    if (error) return { error: error.message };
+
+    revalidatePath(`/onboarding/${recordId}`);
+    return { success: true };
   });
 }

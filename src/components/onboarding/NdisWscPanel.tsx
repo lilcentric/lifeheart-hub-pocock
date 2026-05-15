@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { OnboardingStatus } from "@/lib/types";
 import { getStatusMeta } from "@/utils/status-utils";
+import { getAdminNdisWscActions } from "@/utils/ndiswsc-transitions";
 import {
   markNdisWscAsPendingVerification,
   markNdisWscAsCleared,
@@ -15,6 +16,18 @@ interface Props {
   clearanceDownloadUrl?: string | null;
 }
 
+type ServerAction = (id: string, current: OnboardingStatus) => Promise<{ success?: true; error?: string }>;
+
+const ACTION_MAP: Record<string, ServerAction> = {
+  pending_verification: markNdisWscAsPendingVerification,
+  completed: markNdisWscAsCleared,
+};
+
+const BUTTON_CLASS: Record<string, string> = {
+  pending_verification: "bg-amber-600 hover:bg-amber-700",
+  completed: "bg-green-700 hover:bg-green-800",
+};
+
 export default function NdisWscPanel({
   recordId,
   initialStatus,
@@ -26,18 +39,16 @@ export default function NdisWscPanel({
   const [error, setError] = useState<string | null>(null);
 
   const meta = getStatusMeta(status);
+  const adminActions = isAdmin ? getAdminNdisWscActions(status) : [];
 
-  async function handleAction(
-    action: (id: string, current: OnboardingStatus) => Promise<{ success?: true; error?: string }>
-  ) {
+  async function handleTransition(action: ServerAction, targetStatus: OnboardingStatus) {
     setPending(true);
     setError(null);
     const result = await action(recordId, status);
     if ("error" in result && result.error) {
       setError(result.error);
-    } else if ("success" in result) {
-      if (status === "in_progress") setStatus("pending_verification");
-      else if (status === "pending_verification") setStatus("completed");
+    } else {
+      setStatus(targetStatus);
     }
     setPending(false);
   }
@@ -67,26 +78,18 @@ export default function NdisWscPanel({
         </a>
       )}
 
-      {isAdmin && (
+      {adminActions.length > 0 && (
         <div className="flex items-center gap-3">
-          {status === "in_progress" && (
+          {adminActions.map(({ targetStatus, label }) => (
             <button
-              onClick={() => handleAction(markNdisWscAsPendingVerification)}
+              key={targetStatus}
+              onClick={() => handleTransition(ACTION_MAP[targetStatus], targetStatus)}
               disabled={pending}
-              className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 disabled:opacity-50 transition-colors"
+              className={`px-4 py-2 text-white text-sm font-medium rounded-md disabled:opacity-50 transition-colors ${BUTTON_CLASS[targetStatus]}`}
             >
-              Mark as Pending Verification
+              {label}
             </button>
-          )}
-          {status === "pending_verification" && (
-            <button
-              onClick={() => handleAction(markNdisWscAsCleared)}
-              disabled={pending}
-              className="px-4 py-2 bg-green-700 text-white text-sm font-medium rounded-md hover:bg-green-800 disabled:opacity-50 transition-colors"
-            >
-              Mark as Cleared
-            </button>
-          )}
+          ))}
         </div>
       )}
 

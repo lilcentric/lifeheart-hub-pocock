@@ -13,7 +13,7 @@ function makeDeps() {
       fwaSigningUrl: null,
     }),
     createXeroEmployee: vi.fn().mockResolvedValue({ xeroEmployeeId: "xero-emp-001" }),
-    scheduleXeroInvite: vi.fn().mockResolvedValue({ error: null }),
+    sendXeroInvite: vi.fn().mockResolvedValue({ error: null }),
   };
 }
 
@@ -31,7 +31,7 @@ describe("executeSendOnboardingLink", () => {
       "LF-HDC-00001", "staff@example.com", "Jane Smith", "bundle-uuid", false
     );
     expect(deps.createXeroEmployee).toHaveBeenCalledWith("Jane Smith", "staff@example.com");
-    expect(deps.scheduleXeroInvite).toHaveBeenCalledWith("xero-emp-001");
+    expect(deps.sendXeroInvite).toHaveBeenCalledWith("xero-emp-001");
     expect(result).toEqual({ success: true });
   });
 
@@ -65,13 +65,13 @@ describe("executeSendOnboardingLink", () => {
     expect(deps.generateToken).toHaveBeenCalled();
     expect(deps.sendEmail).toHaveBeenCalled();
     expect(deps.sendAllDocuments).toHaveBeenCalled();
-    expect(deps.scheduleXeroInvite).not.toHaveBeenCalled();
+    expect(deps.sendXeroInvite).not.toHaveBeenCalled();
     expect(result).toEqual({ success: true, xeroWarning: "Xero OAuth token expired" });
   });
 
   it("Xero invite failure surfaces as xeroWarning when createEmployee succeeds", async () => {
     const deps = makeDeps();
-    deps.scheduleXeroInvite.mockResolvedValue({ error: "Xero invite failed" });
+    deps.sendXeroInvite.mockResolvedValue({ error: "Xero invite failed" });
 
     const result = await executeSendOnboardingLink(...DEFAULT_ARGS, deps);
 

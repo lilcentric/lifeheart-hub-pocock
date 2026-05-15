@@ -37,16 +37,20 @@ export default async function StaffPortalPage({ params }: Props) {
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-10 space-y-8">
-        <header>
-          <div className="flex justify-center mb-6">
-            <img src="/logo.svg" alt="Lifeheart" width={200} height={45} />
+        <header className="flex flex-col items-center text-center space-y-4">
+          <img
+            src="/logo.svg"
+            alt="Lifeheart"
+            className="h-16 w-auto"
+          />
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">
+              Welcome, {record.staff_name}
+            </h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Please complete the below in full as quickly as possible to speed up your onboarding process
+            </p>
           </div>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Welcome, {record.staff_name}
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Please complete the below in full as quickly as possible to speed up your onboarding process
-          </p>
         </header>
 
         <section aria-label="Onboarding checklist">
@@ -57,13 +61,13 @@ export default async function StaffPortalPage({ params }: Props) {
                   <div>
                     <span className="text-sm text-gray-800">{item.label}</span>
                     {item.key === "identity_right_to_work_status" && (
-                      <p className="mt-0.5 text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 mt-0.5">
                         Please upload 100pts of ID —{" "}
                         <a
                           href="https://fit2work.com.au/Documents/General/100PointCheck.pdf"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
+                          className="text-blue-600 underline hover:text-blue-700"
                         >
                           See here
                         </a>
