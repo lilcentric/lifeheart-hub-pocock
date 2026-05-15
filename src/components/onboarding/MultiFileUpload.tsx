@@ -6,7 +6,6 @@ import { getStaffUploadUrl, recordStaffUpload } from "@/app/actions/multi-upload
 interface Props {
   token: string;
   documentType: string;
-  label: string;
   initialCount?: number;
 }
 
@@ -18,7 +17,6 @@ interface UploadedFile {
 export default function MultiFileUpload({
   token,
   documentType,
-  label,
   initialCount = 0,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -85,8 +83,6 @@ export default function MultiFileUpload({
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium text-gray-700">{label}</p>
-
       <div
         className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
           dragOver
