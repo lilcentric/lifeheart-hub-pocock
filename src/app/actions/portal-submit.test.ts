@@ -5,12 +5,13 @@ import type { OnboardingRecord } from "@/lib/types";
 // Mock hoisting
 // ---------------------------------------------------------------------------
 
-const { mockResolveStaffToken, mockGetUserById, mockSendSubmissionNotification } =
+const { mockResolveStaffToken, mockGetUserById, mockSendSubmissionNotification, mockGetPortalItems } =
   vi.hoisted(() => {
     return {
       mockResolveStaffToken: vi.fn(),
       mockGetUserById: vi.fn(),
       mockSendSubmissionNotification: vi.fn(),
+      mockGetPortalItems: vi.fn(),
     };
   });
 
@@ -32,6 +33,10 @@ vi.mock("@/lib/email-service", () => ({
   EmailService: {
     sendSubmissionNotification: mockSendSubmissionNotification,
   },
+}));
+
+vi.mock("@/utils/portal-items", () => ({
+  getPortalItems: mockGetPortalItems,
 }));
 
 import { submitPortalCompletion } from "./portal-submit";
@@ -104,6 +109,7 @@ beforeEach(() => {
     error: null,
   });
   mockSendSubmissionNotification.mockResolvedValue(undefined);
+  mockGetPortalItems.mockReturnValue([]);
 });
 
 describe("submitPortalCompletion", () => {
@@ -123,8 +129,26 @@ describe("submitPortalCompletion", () => {
     expect(mockSendSubmissionNotification).toHaveBeenCalledWith(
       "officer@lifeheart.com.au",
       "Alice Example",
-      "LF-HDC-00001"
+      "LF-HDC-00001",
+      expect.any(Array)
     );
+  });
+
+  it("passes snapshot of portal items with human-readable statuses", async () => {
+    mockGetPortalItems.mockReturnValue([
+      { key: "employee_details_form_status", label: "Employee Details Form", status: "not_completed", kind: "form", href: "/onboard/good-token/details" },
+      { key: "employment_contract_status", label: "Employment Contract", status: "completed", kind: "sign", signingUrl: null },
+      { key: "flexible_working_status", label: "Flexible Working Agreement", status: "na", kind: "sign", signingUrl: null },
+    ]);
+
+    await submitPortalCompletion("good-token");
+
+    const snapshot = mockSendSubmissionNotification.mock.calls[0][3];
+    expect(snapshot).toEqual([
+      { label: "Employee Details Form", status: "Not Completed" },
+      { label: "Employment Contract", status: "Completed" },
+      { label: "Flexible Working Agreement", status: "N/A" },
+    ]);
   });
 
   it("surfaces email failure as error result", async () => {

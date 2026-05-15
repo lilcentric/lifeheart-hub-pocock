@@ -61,18 +61,27 @@ export const EmailService = {
   async sendSubmissionNotification(
     to: string,
     staffName: string,
-    recordId: string
+    recordId: string,
+    snapshot: { label: string; status: string }[]
   ): Promise<void> {
     const resend = createResend();
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
     const recordUrl = `${appUrl}/onboarding/${recordId}`;
 
+    const text = snapshot.map(({ label, status }) => `  ${label}: ${status}`).join("\n");
+
+    const tableRows = snapshot
+      .map(({ label, status }) => `<tr><td>${label}</td><td>${status}</td></tr>`)
+      .join("");
+
     const { error } = await resend.emails.send({
       from: process.env.RESEND_FROM ?? DEFAULT_FROM,
       to,
       subject: `${staffName} has submitted their onboarding documents`,
+      text,
       html: `
         <p>${staffName} has marked their onboarding portal as complete.</p>
+        <table>${tableRows}</table>
         <p><a href="${recordUrl}">Review their record</a></p>
         <p>Lifeheart Hub</p>
       `,
