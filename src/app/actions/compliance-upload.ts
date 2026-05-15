@@ -5,12 +5,9 @@ import { revalidatePath } from "next/cache";
 import { withRole } from "@/lib/auth-guard";
 import { StorageService } from "@/lib/storage-service";
 import { recordUpload, type UploadKind } from "@/lib/record-upload";
+import type { ComplianceDocumentType } from "./compliance-upload-logic";
 
-export type ComplianceDocumentType =
-  | "identity_right_to_work"
-  | "ndis_orientation"
-  | "car_insurance"
-  | "additional_training";
+export type { ComplianceDocumentType };
 
 type ActionResult = { success: true } | { error: string };
 
