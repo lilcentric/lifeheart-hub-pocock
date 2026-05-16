@@ -209,5 +209,13 @@ export function getUploadConfig(statusField: StatusFieldKey): UploadConfig | nul
   return entry.upload ?? null;
 }
 
+// Fields that support not_received / not_signed statuses (Documentation group per CONTEXT.md).
+// Derived from the registry so adding a new Documentation field is a single edit.
+export const DOCUMENT_STATUS_FIELDS: (keyof OnboardingRecord)[] = (
+  Object.entries(REGISTRY) as [StatusFieldKey, RegistryEntry][]
+)
+  .filter(([, e]) => e.group === "Documentation")
+  .map(([k]) => k);
+
 export { REGISTRY };
 export type { UploadConfig, RegistryEntry, StatusFieldKey };

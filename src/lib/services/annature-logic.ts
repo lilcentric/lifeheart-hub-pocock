@@ -14,8 +14,9 @@ export interface SendAllDocumentsDeps {
   flexibleWorkingTemplateId: string;
   fwaStaffRoleId: string;
   fwaDirectorRoleId: string;
-  // Look up the Annature template ID + role IDs for the selected Employment Bundle
-  getEmploymentBundleAnnatureIds: (bundleId: string) => Promise<{ templateId: string; staffRoleId: string; directorRoleId: string } | null>;
+  // Resolved Annature IDs for the selected Employment Bundle (pre-fetched by the caller so
+  // the DB lookup happens before any external API calls, enabling early validation).
+  bundleAnnatureIds: { templateId: string; staffRoleId: string; directorRoleId: string };
   // Persist both envelopes and signing URLs
   persistEnvelopeData: (
     recordId: string,
@@ -48,13 +49,11 @@ export async function executeSendAllDocuments(
     flexibleWorkingTemplateId,
     fwaStaffRoleId,
     fwaDirectorRoleId,
-    getEmploymentBundleAnnatureIds,
+    bundleAnnatureIds,
     persistEnvelopeData,
   } = deps;
 
-  const bundleIds = await getEmploymentBundleAnnatureIds(employmentBundleId);
-  if (!bundleIds) return { error: "Employment Bundle template not found" };
-  const { templateId: bundleAnnatureTemplateId, staffRoleId, directorRoleId } = bundleIds;
+  const { templateId: bundleAnnatureTemplateId, staffRoleId, directorRoleId } = bundleAnnatureIds;
 
   // POST Employment Bundle envelope via the template endpoint.
   // Each template has two roles: Director (countersignatory, preset defaults) and

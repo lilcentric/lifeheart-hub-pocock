@@ -1,13 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
-import { STORAGE_BUCKETS } from "@/lib/storage-service";
 import { redirect, notFound } from "next/navigation";
 import OnboardingForm from "@/components/onboarding/OnboardingForm";
 import NdisWscPanel from "@/components/onboarding/NdisWscPanel";
 import OnboardingLinkPanel from "@/components/onboarding/OnboardingLinkPanel";
 import ArchiveButton from "@/components/onboarding/ArchiveButton";
-import { getActiveEmploymentBundles } from "@/lib/employment-bundle-templates";
-import type { OnboardingRecord, Profile, EmploymentBundleTemplate, OnboardingDocument } from "@/lib/types";
+import type { Profile } from "@/lib/types";
 import UploadedDocumentsPanel from "@/components/onboarding/UploadedDocumentsPanel";
+import { loadAdminRecordContext } from "@/lib/admin-record-loader";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -31,90 +30,18 @@ export default async function EditOnboardingPage({ params }: Props) {
 
   if (profile?.role === "viewer") redirect("/onboarding");
 
-  const { data: rawRecord } = await supabase
-    .from("onboarding_records")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (!rawRecord) notFound();
-  const record = rawRecord as OnboardingRecord;
-
-  // Officers can only edit their own records (RLS enforces on write; redirect on read)
-  if (
-    profile?.role === "officer" &&
-    record.onboarding_officer !== user.id
-  ) {
-    redirect("/onboarding");
-  }
-
-  const { data: rawOfficers } = await supabase
-    .from("profiles")
-    .select("id, full_name")
-    .in("role", ["admin", "officer"])
-    .order("full_name");
-  const officers = (rawOfficers ?? []) as Pick<Profile, "id" | "full_name">[];
-
   const isAdmin = profile?.role === "admin";
   const isOfficer = profile?.role === "officer";
 
-  const { data: rawToken } = await supabase
-    .from("onboarding_tokens")
-    .select("id")
-    .eq("record_id", id)
-    .is("revoked_at", null)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const activeToken = rawToken as { id: string } | null;
+  const ctx = await loadAdminRecordContext(supabase as never, id, isAdmin);
+  if (!ctx) notFound();
 
-  const employmentBundles: EmploymentBundleTemplate[] = isAdmin
-    ? await getActiveEmploymentBundles().catch((err) => {
-        console.error("[onboarding] Failed to load employment bundles:", err);
-        return [] as EmploymentBundleTemplate[];
-      })
-    : [];
+  const { record, officers, activeToken, employmentBundles, ndiswscDownloadUrl, documentGroups } = ctx;
 
-  let ndiswscDownloadUrl: string | null = null;
-  if (record.ndiswsc_storage_path) {
-    const { data } = await supabase.storage
-      .from(STORAGE_BUCKETS.staffPortalSingleUploads)
-      .createSignedUrl(record.ndiswsc_storage_path, 3600);
-    ndiswscDownloadUrl = data?.signedUrl ?? null;
+  // Officers can only edit records assigned to them (RLS enforces on write; redirect on read)
+  if (isOfficer && record.onboarding_officer !== user.id) {
+    redirect("/onboarding");
   }
-
-  const { data: rawDocs } = await supabase
-    .from("onboarding_documents")
-    .select("*")
-    .eq("record_id", id)
-    .in("document_type", ["qualifications", "first_aid_cpr"])
-    .order("created_at", { ascending: true });
-  const uploadedDocs = (rawDocs ?? []) as OnboardingDocument[];
-
-  const DOCUMENT_TYPES = [
-    { type: "qualifications", label: "Qualifications" },
-    { type: "first_aid_cpr", label: "First Aid & CPR" },
-  ] as const;
-
-  const documentGroups = await Promise.all(
-    DOCUMENT_TYPES.map(async ({ type, label }) => {
-      const docs = uploadedDocs.filter((d) => d.document_type === type);
-      const documents = await Promise.all(
-        docs.map(async (doc) => {
-          const { data } = await supabase.storage
-            .from(STORAGE_BUCKETS.staffPortalMultiUploads)
-            .createSignedUrl(doc.storage_path, 3600);
-          return {
-            filename: doc.filename,
-            storagePath: doc.storage_path,
-            signedUrl: data?.signedUrl ?? null,
-            uploadedAt: doc.created_at,
-          };
-        })
-      );
-      return { type, label, documents };
-    })
-  );
 
   return (
     <div className="p-6">

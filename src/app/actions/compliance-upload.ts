@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { withRole } from "@/lib/auth-guard";
 import { StorageService, STORAGE_BUCKETS } from "@/lib/storage-service";
-import { recordUpload, type UploadKind } from "@/lib/record-upload";
+import { recordUpload, makeUploadDeps, type UploadKind } from "@/lib/record-upload";
 import type { ComplianceDocumentType } from "@/lib/types";
 
 export type { ComplianceDocumentType };
@@ -36,18 +36,7 @@ export async function recordComplianceUpload(
   return withRole("officer", async () => {
     const supabase = await createClient();
 
-    const result = await recordUpload(recordId, documentType as UploadKind, path, "", {
-      updateRecord: async (id, updates) => {
-        const { error } = await supabase
-          .from("onboarding_records")
-          .update(updates as never)
-          .eq("id", id);
-        return { error: error?.message ?? null };
-      },
-      insertDocument: async () => {
-        throw new Error("insertDocument called for single-file upload kind");
-      },
-    });
+    const result = await recordUpload(recordId, documentType as UploadKind, path, "", makeUploadDeps(supabase as never));
 
     if ("success" in result) {
       revalidatePath(`/onboarding/${recordId}`);

@@ -1,5 +1,7 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { StatusFieldKey } from "./onboarding-status-fields";
 import { getUploadConfig } from "./onboarding-status-fields";
+import { StorageService } from "./storage-service";
 
 // Upload kinds derive directly from registry entries that have `upload` config.
 // Each kind maps to `${kind}_status` in the registry.
@@ -20,13 +22,37 @@ export interface RecordUploadDeps {
     recordId: string,
     updates: Record<string, string>
   ) => Promise<{ error: string | null }>;
-  // Inserts a row into onboarding_documents (multi-file items).
-  insertDocument: (
+  // Inserts a row into onboarding_documents. Required for multi-file upload kinds;
+  // omit for single-file kinds (recordUpload will never call it for those).
+  insertDocument?: (
     recordId: string,
     documentType: string,
     storagePath: string,
     filename: string
   ) => Promise<void>;
+}
+
+// Constructs standard RecordUploadDeps from a Supabase client.
+// Pass multiUploadStorage for upload kinds that insert into onboarding_documents.
+export function makeUploadDeps(
+  supabase: SupabaseClient,
+  multiUploadStorage?: StorageService
+): RecordUploadDeps {
+  return {
+    updateRecord: async (id, updates) => {
+      const { error } = await supabase
+        .from("onboarding_records")
+        .update(updates as never)
+        .eq("id", id);
+      return { error: error?.message ?? null };
+    },
+    ...(multiUploadStorage
+      ? {
+          insertDocument: (rid, dtype, path, fname) =>
+            multiUploadStorage.recordMultiUpload(rid, dtype, path, fname),
+        }
+      : {}),
+  };
 }
 
 export type RecordUploadResult = { success: true } | { error: string };
@@ -62,6 +88,9 @@ export async function recordUpload(
   }
 
   // multi: insert document row, then update status
+  if (!deps.insertDocument) {
+    return { error: `insertDocument dep required for multi-upload kind "${uploadKind}"` };
+  }
   try {
     await deps.insertDocument(recordId, uploadKind, storagePath, filename);
   } catch (err) {
