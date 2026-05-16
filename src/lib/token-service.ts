@@ -66,9 +66,10 @@ export const TokenService = {
 
   async revoke(token: string): Promise<void> {
     const supabase = await createClient();
-    await supabase
+    const { error } = await supabase
       .from("onboarding_tokens")
       .update({ revoked_at: new Date().toISOString() })
       .eq("id", token);
+    if (error) throw new Error(error.message);
   },
 };
