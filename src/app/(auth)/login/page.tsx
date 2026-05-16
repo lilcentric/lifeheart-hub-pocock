@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const oauthError = searchParams.get("error");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +63,12 @@ export default function LoginPage() {
               Sign in to your account
             </p>
           </div>
+
+          {oauthError === "oauth" && (
+            <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md mb-4">
+              GitHub sign-in failed. Ensure the GitHub OAuth app is configured in Supabase.
+            </p>
+          )}
 
           {/* GitHub OAuth */}
           <button
@@ -136,5 +144,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -5,6 +5,13 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const oauthError = searchParams.get("error");
+  const oauthErrorDescription = searchParams.get("error_description");
+
+  if (oauthError) {
+    console.error("[auth/callback] GitHub OAuth error:", oauthError, oauthErrorDescription);
+    return NextResponse.redirect(`${origin}/login?error=oauth`);
+  }
 
   if (code) {
     const cookieStore = await cookies();
@@ -30,6 +37,7 @@ export async function GET(request: NextRequest) {
     if (!error) {
       return NextResponse.redirect(`${origin}/dashboard`);
     }
+    console.error("[auth/callback] exchangeCodeForSession failed:", error.message);
   }
 
   return NextResponse.redirect(`${origin}/login?error=oauth`);
