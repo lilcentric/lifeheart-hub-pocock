@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
-import { newEmploymentBundleSchema } from "@/lib/employment-bundle-templates";
+import { newEmploymentBundleSchema } from "@/lib/employment-bundle-schema";
 import type { EmploymentBundleTemplate, EmploymentType } from "@/lib/types";
 
 type FormValues = z.infer<typeof newEmploymentBundleSchema>;
