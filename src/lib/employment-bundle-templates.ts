@@ -1,8 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { newEmploymentBundleSchema } from "./employment-bundle-schema";
 import type { EmploymentBundleTemplate, UserRole } from "./types";
-
-export { newEmploymentBundleSchema };
+import { newEmploymentBundleSchema } from "./employment-bundle-schema";
 
 export async function getActiveEmploymentBundles(): Promise<EmploymentBundleTemplate[]> {
   const supabase = await createClient();

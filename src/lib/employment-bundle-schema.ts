@@ -6,3 +6,5 @@ export const newEmploymentBundleSchema = z.object({
   version: z.string().min(1, "Version is required"),
   annature_template_id: z.string().min(1, "Annature template ID is required"),
 });
+
+export type NewEmploymentBundleInput = z.infer<typeof newEmploymentBundleSchema>;
