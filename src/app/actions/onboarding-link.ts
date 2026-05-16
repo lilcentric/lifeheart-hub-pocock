@@ -48,7 +48,7 @@ export async function sendOnboardingLink(
   employmentBundleId: string,
   flexibleWorkingOptedIn: boolean
 ): Promise<ActionResult> {
-  return withRole("officer", async () => {
+  const r = await withRole("officer", async () => {
     const supabase = await createClient();
 
     // Validate the employment bundle exists before starting any external API calls.
@@ -186,39 +186,40 @@ export async function sendOnboardingLink(
       }
     );
 
-    revalidatePath(`/onboarding/${recordId}`);
     return result;
   });
+  if ("success" in r) revalidatePath(`/onboarding/${recordId}`);
+  return r;
 }
 
 export async function revokeToken(
   token: string,
   recordId: string
 ): Promise<ActionResult> {
-  return withRole("admin", async () => {
+  const result = await withRole("admin", async () => {
     try {
       await TokenService.revoke(token);
     } catch (e) {
-      return { error: (e as Error).message };
+      return { error: (e as Error).message } as ActionResult;
     }
-
-    revalidatePath(`/onboarding/${recordId}`);
-    return { success: true };
+    return { success: true } as ActionResult;
   });
+  if ("success" in result) revalidatePath(`/onboarding/${recordId}`);
+  return result;
 }
 
 export async function resendOnboardingLink(
   recordId: string,
   email: string
 ): Promise<ActionResult> {
-  return withRole("admin", async () => {
+  const result = await withRole("admin", async () => {
     const supabase = await createClient();
 
     let token: string;
     try {
       token = await TokenService.generate(recordId);
     } catch (e) {
-      return { error: `Failed to generate token: ${(e as Error).message}` };
+      return { error: `Failed to generate token: ${(e as Error).message}` } as ActionResult;
     }
 
     const { data } = await supabase
@@ -231,10 +232,11 @@ export async function resendOnboardingLink(
     try {
       await EmailService.sendOnboardingLink(email, staffName, token);
     } catch (e) {
-      return { error: `Token generated but email failed: ${(e as Error).message}` };
+      return { error: `Token generated but email failed: ${(e as Error).message}` } as ActionResult;
     }
 
-    revalidatePath(`/onboarding/${recordId}`);
-    return { success: true };
+    return { success: true } as ActionResult;
   });
+  if ("success" in result) revalidatePath(`/onboarding/${recordId}`);
+  return result;
 }

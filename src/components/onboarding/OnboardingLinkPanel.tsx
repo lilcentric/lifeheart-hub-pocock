@@ -102,14 +102,19 @@ export default function OnboardingLinkPanel({
     if (!activeToken) return;
     setPending(true);
     setError(null);
-    const result = await revokeToken(activeToken.id, recordId);
-    setPending(false);
-    if ("error" in result) {
-      setError(result.error);
-    } else {
-      setTokenRevoked(true);
-      setSuccess("Token revoked.");
-      closeModal();
+    try {
+      const result = await revokeToken(activeToken.id, recordId);
+      setPending(false);
+      if ("error" in result) {
+        setError(result.error);
+      } else {
+        setTokenRevoked(true);
+        setSuccess("Token revoked.");
+        closeModal();
+      }
+    } catch {
+      setPending(false);
+      setError("An unexpected error occurred. Please try again.");
     }
   }
 
