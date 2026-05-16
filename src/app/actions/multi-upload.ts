@@ -3,7 +3,7 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { resolveStaffToken } from "@/lib/token-service";
 import { StorageService, STORAGE_BUCKETS } from "@/lib/storage-service";
-import { recordUpload, type UploadKind } from "@/lib/record-upload";
+import { recordUpload, makeUploadDeps, type UploadKind } from "@/lib/record-upload";
 import { revalidatePath } from "next/cache";
 
 export async function getStaffUploadUrl(
@@ -43,18 +43,9 @@ export async function recordStaffUpload(
 
   const supabase = createServiceClient();
   const bucket = supabase.storage.from(STORAGE_BUCKETS.staffPortalMultiUploads);
+  const multiStorage = new StorageService(supabase, bucket);
 
-  const result = await recordUpload(record.id, documentType as UploadKind, storagePath, filename, {
-    updateRecord: async (id, updates) => {
-      const { error } = await supabase
-        .from("onboarding_records")
-        .update(updates as never)
-        .eq("id", id);
-      return { error: error?.message ?? null };
-    },
-    insertDocument: (rid, dtype, path, fname) =>
-      new StorageService(supabase, bucket).recordMultiUpload(rid, dtype, path, fname),
-  });
+  const result = await recordUpload(record.id, documentType as UploadKind, storagePath, filename, makeUploadDeps(supabase, multiStorage));
 
   if ("success" in result) {
     revalidatePath(`/onboard/${token}`);

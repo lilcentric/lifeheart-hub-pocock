@@ -99,7 +99,7 @@ const BUNDLE_ANNATURE_TMPL = "ann-bundle-001";
 
 function makeAllDocsDeps(
   fetchImpl: typeof fetch,
-  bundleAnnIds: { templateId: string; staffRoleId: string; directorRoleId: string } | null = {
+  bundleAnnIds: { templateId: string; staffRoleId: string; directorRoleId: string } = {
     templateId: BUNDLE_ANNATURE_TMPL,
     staffRoleId: BUNDLE_STAFF_ROLE_ID,
     directorRoleId: BUNDLE_DIRECTOR_ROLE_ID,
@@ -113,7 +113,7 @@ function makeAllDocsDeps(
     fwaStaffRoleId: FWA_STAFF_ROLE_ID,
     fwaDirectorRoleId: FWA_DIRECTOR_ROLE_ID,
     flexibleWorkingTemplateId: FLEXIBLE_WORKING_TMPL,
-    getEmploymentBundleAnnatureIds: vi.fn().mockResolvedValue(bundleAnnIds),
+    bundleAnnatureIds: bundleAnnIds,
     persistEnvelopeData: vi.fn().mockResolvedValue({ error: null }),
   };
 }
@@ -131,18 +131,6 @@ function makeSuccessFetch(envelopeId = "env-all-001", signingLink = "https://sig
 }
 
 describe("executeSendAllDocuments", () => {
-  it("returns error when Employment Bundle template lookup returns null", async () => {
-    const mockFetch = vi.fn();
-    const deps = makeAllDocsDeps(mockFetch, null as Parameters<typeof makeAllDocsDeps>[1]);
-
-    const result = await executeSendAllDocuments(
-      "LF-HDC-00020", "staff@example.com", STAFF_NAME, "bundle-uuid", false, deps
-    );
-
-    expect(result).toEqual({ error: "Employment Bundle template not found" });
-    expect(mockFetch).not.toHaveBeenCalled();
-  });
-
   it("POSTs to the template URL with correct recipients", async () => {
     const mockFetch = makeSuccessFetch();
     const deps = makeAllDocsDeps(mockFetch);

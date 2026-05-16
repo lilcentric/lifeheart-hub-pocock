@@ -3,7 +3,7 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { StorageService, STORAGE_BUCKETS } from "@/lib/storage-service";
 import { revalidatePath } from "next/cache";
-import { recordUpload } from "@/lib/record-upload";
+import { recordUpload, makeUploadDeps } from "@/lib/record-upload";
 
 type ActionResult = { success: true } | { error: string };
 
@@ -30,18 +30,7 @@ export async function markWwccUploaded(
 ): Promise<ActionResult> {
   const supabase = createServiceClient();
 
-  const result = await recordUpload(recordId, "wwcc", storagePath, "", {
-    updateRecord: async (id, updates) => {
-      const { error } = await supabase
-        .from("onboarding_records")
-        .update(updates as never)
-        .eq("id", id);
-      return { error: error?.message ?? null };
-    },
-    insertDocument: async () => {
-      throw new Error("insertDocument called for single-file upload kind");
-    },
-  });
+  const result = await recordUpload(recordId, "wwcc", storagePath, "", makeUploadDeps(supabase));
 
   if ("success" in result) {
     revalidatePath(`/onboard`);

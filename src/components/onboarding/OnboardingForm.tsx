@@ -10,9 +10,10 @@ import {
   DOCUMENT_STATUSES,
   GENERAL_STATUSES,
   DOCUMENT_FIELDS,
+  getStatusMeta,
 } from "@/utils/status-utils";
-import { LEGACY_STATUS_FIELDS } from "@/lib/onboarding-status-fields";
-import type { OnboardingRecord, OnboardingStatus, Profile } from "@/lib/types";
+import { COLUMN_GROUPS, LEGACY_STATUS_FIELDS } from "@/lib/onboarding-status-fields";
+import type { OnboardingRecord, Profile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const statusEnum = z.enum([
@@ -69,61 +70,18 @@ type FieldGroup = {
   fields: { key: StatusFieldKey; label: string }[];
 };
 
-const FIELD_GROUPS: FieldGroup[] = [
-  {
-    label: "Recruitment",
-    fields: [
-      { key: "job_application_status", label: "Job Application" },
-      { key: "interview_status", label: "Interview" },
-      { key: "reference_checks_status", label: "Reference Checks" },
-      { key: "cv_status", label: "CV (legacy)" },
-    ],
-  },
-  {
-    label: "Documentation",
-    fields: [
-      { key: "position_description_status", label: "Position Description" },
-      { key: "employment_contract_status", label: "Employment Contract" },
-      { key: "code_of_conduct_status", label: "Code of Conduct" },
-      { key: "employee_details_form_status", label: "Employee Details Form" },
-      { key: "conflict_of_interest_status", label: "Conflict of Interest" },
-    ],
-  },
-  {
-    label: "Compliance & Identity",
-    fields: [
-      { key: "identity_right_to_work_status", label: "Identity / Right to Work" },
-      { key: "wwcc_status", label: "WWCC" },
-      { key: "ndiswsc_status", label: "NDIS Worker Screening" },
-      { key: "ndis_orientation_status", label: "NDIS Orientation Module" },
-      { key: "qualifications_status", label: "Qualifications" },
-      { key: "first_aid_cpr_status", label: "First Aid & CPR" },
-      { key: "car_insurance_status", label: "Car Insurance" },
-    ],
-  },
-  {
-    label: "Training & Induction",
-    fields: [
-      { key: "training_status", label: "Training" },
-      { key: "orientation_induction_status", label: "Orientation / Induction" },
-      { key: "training_needs_status", label: "Training Needs (legacy)" },
-    ],
-  },
-  {
-    label: "Admin",
-    fields: [{ key: "uniforms_status", label: "Uniforms (legacy)" }],
-  },
-];
-
-const STATUS_LABELS: Record<OnboardingStatus, string> = {
-  completed: "Completed",
-  not_completed: "Not Completed",
-  not_received: "Not Received",
-  not_signed: "Not Signed",
-  in_progress: "In Progress",
-  pending_verification: "Pending Verification",
-  na: "N/A",
-};
+const FORM_KEYS = new Set(Object.keys(schema.shape));
+const FIELD_GROUPS: FieldGroup[] = COLUMN_GROUPS
+  .map((g) => ({
+    label: g.label,
+    fields: g.columns
+      .filter((c) => FORM_KEYS.has(c.key))
+      .map((c) => ({
+        key: c.key as StatusFieldKey,
+        label: LEGACY_STATUS_FIELDS.has(c.key) ? `${c.label} (legacy)` : c.label,
+      })),
+  }))
+  .filter((g) => g.fields.length > 0);
 
 const DEFAULT_VALUES: FormValues = {
   staff_name: "",
@@ -333,7 +291,7 @@ export default function OnboardingForm({
                       >
                         {options.map((s) => (
                           <option key={s} value={s}>
-                            {STATUS_LABELS[s]}
+                            {getStatusMeta(s).label}
                           </option>
                         ))}
                       </select>

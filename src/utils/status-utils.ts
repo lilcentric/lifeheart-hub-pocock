@@ -1,5 +1,5 @@
 import type { OnboardingStatus, OnboardingRecord } from "@/lib/types";
-import { ALL_STATUS_FIELDS, type StatusField } from "@/lib/onboarding-status-fields";
+import { ALL_STATUS_FIELDS, DOCUMENT_STATUS_FIELDS, type StatusField } from "@/lib/onboarding-status-fields";
 
 interface StatusMeta {
   label: string;
@@ -63,17 +63,11 @@ export const GENERAL_STATUSES: OnboardingStatus[] = [
   "na",
 ];
 
-// Document fields per CONTEXT.md (supports not_received / not_signed)
-export const DOCUMENT_FIELDS: (keyof OnboardingRecord)[] = [
-  "position_description_status",
-  "employment_contract_status",
-  "code_of_conduct_status",
-  "employee_details_form_status",
-  "conflict_of_interest_status",
-];
+// Re-exported from the registry so callers don't need to import from two places.
+export const DOCUMENT_FIELDS = DOCUMENT_STATUS_FIELDS;
 
 export function isDocumentField(field: keyof OnboardingRecord): boolean {
-  return DOCUMENT_FIELDS.includes(field);
+  return DOCUMENT_STATUS_FIELDS.includes(field);
 }
 
 

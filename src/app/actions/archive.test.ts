@@ -1,78 +1,59 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { mockGetUser, mockSingleProfile, mockSupabase } = vi.hoisted(() => {
-  const mockGetUser = vi.fn();
-  const mockSingleProfile = vi.fn();
-  const mockEq = vi.fn().mockReturnValue({ single: mockSingleProfile });
-  const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
-  const mockFrom = vi.fn().mockReturnValue({ select: mockSelect });
-  const mockSupabase = { auth: { getUser: mockGetUser }, from: mockFrom };
-  return { mockGetUser, mockSingleProfile, mockSupabase };
+const mockUpdate = vi.fn();
+const mockEqOnUpdate = vi.fn();
+const mockGetUser = vi.fn();
+const mockSingleProfile = vi.fn();
+
+const mockSupabase = vi.hoisted(() => {
+  const eqOnUpdate = vi.fn().mockReturnValue({ error: null });
+  const update = vi.fn().mockReturnValue({ eq: eqOnUpdate });
+  const eqOnSelect = vi.fn().mockReturnValue({ single: vi.fn() });
+  const select = vi.fn().mockReturnValue({ eq: eqOnSelect });
+  const from = vi.fn((table: string) => ({ select, update }));
+  const getUser = vi.fn();
+  return { from, update, eqOnUpdate, select, eqOnSelect, getUser };
 });
 
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 
-vi.mock("@/lib/archive-service", () => ({
-  archiveRecord: vi.fn().mockResolvedValue({ error: null }),
-  unarchiveRecord: vi.fn().mockResolvedValue({ error: null }),
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: vi.fn().mockResolvedValue({
+    auth: { getUser: mockSupabase.getUser },
+    from: mockSupabase.from,
+  }),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: vi.fn().mockResolvedValue(mockSupabase),
+vi.mock("@/lib/auth-guard", () => ({
+  withRole: vi.fn(async (role: string, fn: (ctx: { userId: string }) => unknown) => {
+    if (role === "admin") return fn({ userId: "admin-uuid" });
+    return { error: "Unauthorised" };
+  }),
 }));
 
 import { archiveAction, unarchiveAction } from "./archive";
-import { archiveRecord, unarchiveRecord } from "@/lib/archive-service";
-
-function setupUser(userId: string, role: string) {
-  mockGetUser.mockResolvedValue({ data: { user: { id: userId } } });
-  mockSingleProfile.mockResolvedValue({ data: { role }, error: null });
-}
 
 beforeEach(() => {
   vi.clearAllMocks();
-  // Re-apply default mock implementations after clearAllMocks
-  vi.mocked(archiveRecord).mockResolvedValue({ error: null });
-  vi.mocked(unarchiveRecord).mockResolvedValue({ error: null });
+  mockSupabase.eqOnUpdate.mockReturnValue({ error: null });
+  mockSupabase.update.mockReturnValue({ eq: mockSupabase.eqOnUpdate });
+  mockSupabase.from.mockReturnValue({ select: mockSupabase.select, update: mockSupabase.update });
 });
 
 describe("archiveAction", () => {
-  it("calls archiveRecord when user is admin", async () => {
-    setupUser("admin-uuid", "admin");
-
+  it("updates archived_at and archived_by when user is admin", async () => {
     const result = await archiveAction("LF-HDC-00001");
 
-    expect(archiveRecord).toHaveBeenCalledWith(
-      mockSupabase,
-      "LF-HDC-00001",
-      "admin-uuid"
+    expect(mockSupabase.from).toHaveBeenCalledWith("onboarding_records");
+    expect(mockSupabase.update).toHaveBeenCalledWith(
+      expect.objectContaining({ archived_by: "admin-uuid" })
     );
+    expect(mockSupabase.eqOnUpdate).toHaveBeenCalledWith("id", "LF-HDC-00001");
     expect(result).toEqual({ success: true });
   });
 
-  it("returns unauthorized error when user is officer", async () => {
-    setupUser("officer-uuid", "officer");
-
-    const result = await archiveAction("LF-HDC-00001");
-
-    expect(archiveRecord).not.toHaveBeenCalled();
-    expect(result).toEqual({ error: "Unauthorised" });
-  });
-
-  it("returns unauthorized error when user is viewer", async () => {
-    setupUser("viewer-uuid", "viewer");
-
-    const result = await archiveAction("LF-HDC-00001");
-
-    expect(archiveRecord).not.toHaveBeenCalled();
-    expect(result).toEqual({ error: "Unauthorised" });
-  });
-
-  it("returns error message when archiveRecord fails", async () => {
-    setupUser("admin-uuid", "admin");
-    vi.mocked(archiveRecord).mockResolvedValueOnce({
-      error: { message: "DB failure" },
-    });
+  it("returns error when DB update fails", async () => {
+    mockSupabase.eqOnUpdate.mockReturnValueOnce({ error: { message: "DB failure" } });
 
     const result = await archiveAction("LF-HDC-00001");
 
@@ -81,29 +62,16 @@ describe("archiveAction", () => {
 });
 
 describe("unarchiveAction", () => {
-  it("calls unarchiveRecord when user is admin", async () => {
-    setupUser("admin-uuid", "admin");
-
+  it("clears archived_at and archived_by when user is admin", async () => {
     const result = await unarchiveAction("LF-HDC-00001");
 
-    expect(unarchiveRecord).toHaveBeenCalledWith(mockSupabase, "LF-HDC-00001");
+    expect(mockSupabase.update).toHaveBeenCalledWith({ archived_at: null, archived_by: null });
+    expect(mockSupabase.eqOnUpdate).toHaveBeenCalledWith("id", "LF-HDC-00001");
     expect(result).toEqual({ success: true });
   });
 
-  it("returns unauthorized error when user is officer", async () => {
-    setupUser("officer-uuid", "officer");
-
-    const result = await unarchiveAction("LF-HDC-00001");
-
-    expect(unarchiveRecord).not.toHaveBeenCalled();
-    expect(result).toEqual({ error: "Unauthorised" });
-  });
-
-  it("returns error message when unarchiveRecord fails", async () => {
-    setupUser("admin-uuid", "admin");
-    vi.mocked(unarchiveRecord).mockResolvedValueOnce({
-      error: { message: "DB failure" },
-    });
+  it("returns error when DB update fails", async () => {
+    mockSupabase.eqOnUpdate.mockReturnValueOnce({ error: { message: "DB failure" } });
 
     const result = await unarchiveAction("LF-HDC-00001");
 

@@ -51,6 +51,19 @@ export async function sendOnboardingLink(
   return withRole("officer", async () => {
     const supabase = await createClient();
 
+    // Validate the employment bundle exists before starting any external API calls.
+    const { data: bundleRow } = await supabase
+      .from("employment_bundle_templates")
+      .select("annature_template_id, staff_role_id, director_role_id")
+      .eq("id", employmentBundleId)
+      .single();
+    if (!bundleRow) return { error: "Employment Bundle template not found or has been archived" };
+    const bundleAnnatureIds = {
+      templateId: (bundleRow as { annature_template_id: string; staff_role_id: string; director_role_id: string }).annature_template_id,
+      staffRoleId: (bundleRow as { annature_template_id: string; staff_role_id: string; director_role_id: string }).staff_role_id,
+      directorRoleId: (bundleRow as { annature_template_id: string; staff_role_id: string; director_role_id: string }).director_role_id,
+    };
+
     const result = await executeSendOnboardingLink(
       recordId,
       email,
@@ -117,16 +130,7 @@ export async function sendOnboardingLink(
             flexibleWorkingTemplateId: requireEnv("ANNATURE_FLEXIBLE_WORKING_TEMPLATE_ID"),
             fwaStaffRoleId: requireEnv("ANNATURE_FWA_STAFF_ROLE_ID"),
             fwaDirectorRoleId: requireEnv("ANNATURE_FWA_DIRECTOR_ROLE_ID"),
-            getEmploymentBundleAnnatureIds: async (id) => {
-              const { data } = await supabase
-                .from("employment_bundle_templates")
-                .select("annature_template_id, staff_role_id, director_role_id")
-                .eq("id", id)
-                .single();
-              if (!data) return null;
-              const row = data as { annature_template_id: string; staff_role_id: string; director_role_id: string };
-              return { templateId: row.annature_template_id, staffRoleId: row.staff_role_id, directorRoleId: row.director_role_id };
-            },
+            bundleAnnatureIds,
             persistEnvelopeData: async (
               recId2,
               envelopeId,
